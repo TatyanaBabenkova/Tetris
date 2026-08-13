@@ -185,7 +185,7 @@ const gameCtx = gameCanvas.getContext("2d");
 const nextCanvas = document.getElementById("nextCanvas");
 const nextCtx = nextCanvas.getContext("2d");
 const mobileNextCanvas = document.getElementById("mobileNextCanvas");
-const mobileNextCtx = mobileNextCanvas.getContext("2d");
+const mobileNextCtx = mobileNextCanvas ? mobileNextCanvas.getContext("2d") : null;
 
 const scoreValue = document.getElementById("scoreValue");
 const recordValue = document.getElementById("recordValue");
@@ -241,7 +241,8 @@ let touchStart = null;
 let touchMoveDebt = 0;
 let touchDropMark = 0;
 let lastPreviewKey = "";
-let lastStartInputAt = 0;
+let animationFrameId = 0;
+let renderErrorShown = false;
 const sceneImages = {
   levels: STATIONS.map((station) => loadSceneImage(station.image))
 };
@@ -363,16 +364,16 @@ function resizeAll() {
     y: (boardSize.height - cell * ROWS) / 2
   };
 
-  const nextSize = resizeCanvas(nextCanvas, nextCtx);
-  nextMetrics = { width: nextSize.width, height: nextSize.height };
+  nextMetrics = syncPreviewMetrics(nextCanvas, nextCtx, nextMetrics);
 
-  const mobileNextSize = resizeCanvas(mobileNextCanvas, mobileNextCtx);
-  mobileNextMetrics = { width: mobileNextSize.width, height: mobileNextSize.height };
+  if (mobileNextCanvas && mobileNextCtx) {
+    mobileNextMetrics = syncPreviewMetrics(mobileNextCanvas, mobileNextCtx, mobileNextMetrics);
+  }
 }
 
 function syncPreviewMetrics(canvas, ctx, metrics) {
   const rect = canvas.getBoundingClientRect();
-  if (rect.width <= 0 || rect.height <= 0) return metrics;
+  if (rect.width <= 0 || rect.height <= 0) return { width: 0, height: 0 };
   const needsResize =
     Math.abs(rect.width - metrics.width) > 0.5 ||
     Math.abs(rect.height - metrics.height) > 0.5 ||
@@ -441,6 +442,8 @@ function newGame() {
   running = true;
   paused = false;
   gameOver = false;
+  lastTime = performance.now();
+  renderErrorShown = false;
   hideModal(startScreen);
   hideModal(pauseScreen);
   hideModal(gameOverScreen);
@@ -448,15 +451,19 @@ function newGame() {
   setTheme();
   updateHud();
   drawNext();
-  resumeAudio();
+  safeDrawFrame(lastTime);
+  startAnimationLoop();
 }
 
 function startNewGameFromInput(event) {
   if (event) event.preventDefault();
-  const now = performance.now();
-  if (now - lastStartInputAt < 350) return;
-  lastStartInputAt = now;
   newGame();
+}
+
+function bindStartControls() {
+  for (const button of [startButton, restartButton, newGameButton]) {
+    button.addEventListener("click", startNewGameFromInput);
+  }
 }
 
 function hideModal(modal) {
@@ -655,7 +662,7 @@ function togglePause(force) {
   }
 }
 
-function update(time = 0) {
+function drawFrame(time = 0) {
   const delta = time - lastTime;
   lastTime = time;
   if (!sceneryPaused) {
@@ -675,7 +682,34 @@ function update(time = 0) {
 
   drawBoard();
   refreshNextPreview();
-  requestAnimationFrame(update);
+}
+
+function reportRenderError(error) {
+  console.error("Tetris render error:", error);
+  if (!renderErrorShown) {
+    renderErrorShown = true;
+    showToast("Перезагрузите страницу");
+  }
+}
+
+function safeDrawFrame(time = 0) {
+  try {
+    drawFrame(time);
+    return true;
+  } catch (error) {
+    reportRenderError(error);
+    return false;
+  }
+}
+
+function update(time = 0) {
+  safeDrawFrame(time);
+  animationFrameId = requestAnimationFrame(update);
+}
+
+function startAnimationLoop() {
+  if (animationFrameId) return;
+  animationFrameId = requestAnimationFrame(update);
 }
 
 function drawBoard() {
@@ -857,20 +891,32 @@ function drawIcon(ctx, type, cx, cy, size, color) {
 
 function drawNext() {
   nextMetrics = syncPreviewMetrics(nextCanvas, nextCtx, nextMetrics);
-  mobileNextMetrics = syncPreviewMetrics(mobileNextCanvas, mobileNextCtx, mobileNextMetrics);
-  drawNextPreview(nextCtx, nextMetrics);
-  drawNextPreview(mobileNextCtx, mobileNextMetrics);
+  if (mobileNextCanvas && mobileNextCtx) {
+    mobileNextMetrics = syncPreviewMetrics(mobileNextCanvas, mobileNextCtx, mobileNextMetrics);
+  }
+  if (canDrawPreview(nextMetrics)) {
+    drawNextPreview(nextCtx, nextMetrics);
+  }
+  if (mobileNextCtx && canDrawPreview(mobileNextMetrics)) {
+    drawNextPreview(mobileNextCtx, mobileNextMetrics);
+  }
   lastPreviewKey = getPreviewKey();
 }
 
 function refreshNextPreview() {
   const before = getPreviewKey();
   nextMetrics = syncPreviewMetrics(nextCanvas, nextCtx, nextMetrics);
-  mobileNextMetrics = syncPreviewMetrics(mobileNextCanvas, mobileNextCtx, mobileNextMetrics);
+  if (mobileNextCanvas && mobileNextCtx) {
+    mobileNextMetrics = syncPreviewMetrics(mobileNextCanvas, mobileNextCtx, mobileNextMetrics);
+  }
   const after = getPreviewKey();
   if (after !== lastPreviewKey || after !== before) {
-    drawNextPreview(nextCtx, nextMetrics);
-    drawNextPreview(mobileNextCtx, mobileNextMetrics);
+    if (canDrawPreview(nextMetrics)) {
+      drawNextPreview(nextCtx, nextMetrics);
+    }
+    if (mobileNextCtx && canDrawPreview(mobileNextMetrics)) {
+      drawNextPreview(mobileNextCtx, mobileNextMetrics);
+    }
     lastPreviewKey = after;
   }
 }
@@ -886,8 +932,13 @@ function getPreviewKey() {
   ].join(":");
 }
 
+function canDrawPreview(metrics) {
+  return metrics.width >= 24 && metrics.height >= 24;
+}
+
 function drawNextPreview(ctx, metrics) {
   const { width, height } = metrics;
+  if (!canDrawPreview(metrics)) return;
   ctx.clearRect(0, 0, width, height);
 
   const gradient = ctx.createLinearGradient(0, 0, width, height);
@@ -1624,12 +1675,6 @@ function bindControls() {
     if (event.key === "Enter" && (!running || gameOver)) newGame();
   });
 
-  startButton.addEventListener("pointerup", startNewGameFromInput);
-  restartButton.addEventListener("pointerup", startNewGameFromInput);
-  newGameButton.addEventListener("pointerup", startNewGameFromInput);
-  startButton.addEventListener("click", startNewGameFromInput);
-  restartButton.addEventListener("click", startNewGameFromInput);
-  newGameButton.addEventListener("click", startNewGameFromInput);
   resumeButton.addEventListener("click", () => togglePause(false));
   pauseButton.addEventListener("click", () => togglePause());
   muteButton.addEventListener("click", toggleSound);
@@ -1651,6 +1696,7 @@ function clearHoldTimers() {
 }
 
 function init() {
+  bindStartControls();
   nextPiece = makePiece(nextType());
   renderRoute();
   setTheme();
@@ -1660,7 +1706,8 @@ function init() {
   resizeAll();
   drawNext();
   bindControls();
-  requestAnimationFrame(update);
+  safeDrawFrame(performance.now());
+  startAnimationLoop();
 }
 
 init();
