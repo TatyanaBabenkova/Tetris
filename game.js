@@ -241,6 +241,7 @@ let touchStart = null;
 let touchMoveDebt = 0;
 let touchDropMark = 0;
 let lastPreviewKey = "";
+let lastStartInputAt = 0;
 const sceneImages = {
   levels: STATIONS.map((station) => loadSceneImage(station.image))
 };
@@ -447,10 +448,15 @@ function newGame() {
   setTheme();
   updateHud();
   drawNext();
-  showToast("Отправление");
-  resumeAudio().then((isReady) => {
-    if (isReady) playEffect("start");
-  });
+  resumeAudio();
+}
+
+function startNewGameFromInput(event) {
+  if (event) event.preventDefault();
+  const now = performance.now();
+  if (now - lastStartInputAt < 350) return;
+  lastStartInputAt = now;
+  newGame();
 }
 
 function hideModal(modal) {
@@ -1422,7 +1428,6 @@ function playEffect(name) {
     drop: [145, 0.075, "sawtooth", 0.022],
     clear: [660, 0.11, "triangle", 0.04],
     level: [820, 0.16, "triangle", 0.045],
-    start: [523, 0.12, "triangle", 0.026],
     gameover: [120, 0.2, "sine", 0.034]
   };
   const effect = effects[name];
@@ -1459,9 +1464,7 @@ function toggleSound() {
   writeStorage(STORAGE_KEYS.sound, muted ? "off" : "on");
   updateSoundButton();
   if (!muted) {
-    resumeAudio().then((isReady) => {
-      if (isReady) playEffect("start");
-    });
+    resumeAudio();
   }
 }
 
@@ -1621,9 +1624,12 @@ function bindControls() {
     if (event.key === "Enter" && (!running || gameOver)) newGame();
   });
 
-  startButton.addEventListener("click", newGame);
-  restartButton.addEventListener("click", newGame);
-  newGameButton.addEventListener("click", newGame);
+  startButton.addEventListener("pointerup", startNewGameFromInput);
+  restartButton.addEventListener("pointerup", startNewGameFromInput);
+  newGameButton.addEventListener("pointerup", startNewGameFromInput);
+  startButton.addEventListener("click", startNewGameFromInput);
+  restartButton.addEventListener("click", startNewGameFromInput);
+  newGameButton.addEventListener("click", startNewGameFromInput);
   resumeButton.addEventListener("click", () => togglePause(false));
   pauseButton.addEventListener("click", () => togglePause());
   muteButton.addEventListener("click", toggleSound);
