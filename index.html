@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
+    >
+    <meta name="theme-color" content="#13b9a4">
+    <meta name="description" content="Локальная веб-игра Tetris для ИРС Попутчик.">
+    <title>Tetris - Попутчик</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <canvas id="sceneCanvas" class="scene-canvas" aria-hidden="true"></canvas>
+
+    <main class="app-shell" aria-label="Tetris">
+      <header class="top-bar">
+        <div class="title-lockup">
+          <div class="title-mark" aria-hidden="true">T</div>
+          <div>
+            <p>ИРС Попутчик</p>
+            <h1>Tetris</h1>
+          </div>
+        </div>
+
+        <div class="top-actions">
+          <button id="muteButton" class="icon-button" type="button" aria-label="Звук включен" title="Звук">
+            <span aria-hidden="true">♪</span>
+          </button>
+          <button id="sceneryButton" class="icon-button" type="button" aria-label="Остановить вид за окном" title="Остановить вид за окном">
+            <span aria-hidden="true">≈</span>
+          </button>
+          <button id="pauseButton" class="icon-button" type="button" aria-label="Пауза" title="Пауза">
+            <span aria-hidden="true">II</span>
+          </button>
+        </div>
+      </header>
+
+      <section class="play-layout">
+        <div class="board-zone">
+          <div class="board-frame" id="boardFrame">
+            <canvas id="gameCanvas" aria-label="Игровое поле" role="img"></canvas>
+            <div class="board-shine" aria-hidden="true"></div>
+          </div>
+
+          <div class="controls" aria-label="Управление">
+            <button class="control-button" type="button" data-action="left" aria-label="Влево">
+              <span aria-hidden="true">←</span>
+            </button>
+            <button class="control-button" type="button" data-action="rotate" aria-label="Повернуть">
+              <span aria-hidden="true">↻</span>
+            </button>
+            <button class="control-button" type="button" data-action="right" aria-label="Вправо">
+              <span aria-hidden="true">→</span>
+            </button>
+            <button class="control-button" type="button" data-action="down" aria-label="Вниз">
+              <span aria-hidden="true">↓</span>
+            </button>
+            <button class="control-button control-button-wide" type="button" data-action="drop" aria-label="Сбросить">
+              <span aria-hidden="true">⇣</span>
+            </button>
+          </div>
+        </div>
+
+        <aside class="hud" aria-label="Показатели игры">
+          <div class="next-panel">
+            <span>Дальше</span>
+            <canvas id="nextCanvas" aria-label="Следующая фигура" role="img"></canvas>
+          </div>
+
+          <div class="score-row">
+            <div class="stat">
+              <span>Счет</span>
+              <strong id="scoreValue">0</strong>
+            </div>
+            <div class="stat">
+              <span>Рекорд</span>
+              <strong id="recordValue">0</strong>
+            </div>
+          </div>
+
+          <div class="journey-panel">
+            <div class="station-title">
+              <span>Маршрут</span>
+              <strong id="stationName">Купе</strong>
+            </div>
+            <div class="progress">
+              <div id="levelProgress" class="progress-fill"></div>
+            </div>
+            <div class="line-note">
+              <span>Уровень <strong id="levelValue">1</strong></span>
+              <span><strong id="linesValue">0</strong> линий</span>
+            </div>
+          </div>
+
+          <div class="route" id="routeTrack" aria-label="Маршрут уровней"></div>
+
+          <button id="newGameButton" class="primary-button" type="button">Новая игра</button>
+        </aside>
+      </section>
+    </main>
+
+    <div id="startScreen" class="modal is-visible" role="dialog" aria-modal="true" aria-labelledby="startTitle">
+      <div class="modal-panel">
+        <div class="ticket-stub" aria-hidden="true">
+          <span></span>
+          <span></span>
+        </div>
+        <p class="modal-kicker">Попутчик</p>
+        <h2 id="startTitle">Tetris</h2>
+        <p class="modal-copy">Маршрут начинается. Собирайте линии и открывайте новые станции.</p>
+        <button id="startButton" class="primary-button" type="button">Играть</button>
+      </div>
+    </div>
+
+    <div id="pauseScreen" class="modal" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
+      <div class="modal-panel compact">
+        <h2 id="pauseTitle">Пауза</h2>
+        <button id="resumeButton" class="primary-button" type="button">Продолжить</button>
+      </div>
+    </div>
+
+    <div id="gameOverScreen" class="modal" role="dialog" aria-modal="true" aria-labelledby="gameOverTitle">
+      <div class="modal-panel compact">
+        <p class="modal-kicker">Финиш</p>
+        <h2 id="gameOverTitle">Игра окончена</h2>
+        <p class="modal-copy">Счет: <strong id="finalScore">0</strong></p>
+        <button id="restartButton" class="primary-button" type="button">Еще раз</button>
+      </div>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <script src="game.js" defer></script>
+  </body>
+</html>
