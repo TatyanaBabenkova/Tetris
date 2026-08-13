@@ -190,6 +190,8 @@ const mobileNextCtx = mobileNextCanvas ? mobileNextCanvas.getContext("2d") : nul
 const scoreValue = document.getElementById("scoreValue");
 const recordValue = document.getElementById("recordValue");
 const stationName = document.getElementById("stationName");
+const mobileStationName = document.getElementById("mobileStationName");
+const mobileScoreValue = document.getElementById("mobileScoreValue");
 const levelValue = document.getElementById("levelValue");
 const linesValue = document.getElementById("linesValue");
 const levelProgress = document.getElementById("levelProgress");
@@ -348,6 +350,9 @@ function resizeCanvas(canvas, ctx) {
 }
 
 function resizeAll() {
+  const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  document.documentElement.style.setProperty("--app-height", `${Math.max(1, viewportHeight)}px`);
+
   const sceneRatio = Math.min(window.devicePixelRatio || 1, 2);
   sceneMetrics = { width: window.innerWidth, height: window.innerHeight, ratio: sceneRatio };
   sceneCanvas.width = Math.round(sceneMetrics.width * sceneRatio);
@@ -396,6 +401,8 @@ function updateHud() {
   scoreValue.textContent = formatter.format(score);
   recordValue.textContent = formatter.format(Math.max(record, score));
   stationName.textContent = `Уровень ${levelIndex + 1}: ${station.name}`;
+  mobileStationName.textContent = `Ур. ${levelIndex + 1} · ${station.name}`;
+  mobileScoreValue.textContent = `${formatter.format(score)} очков`;
   levelValue.textContent = String(levelIndex + 1);
   linesValue.textContent = formatter.format(lines);
   const isFinalLevel = levelIndex === STATIONS.length - 1;
@@ -1682,6 +1689,12 @@ function bindControls() {
     resizeAll();
     drawNext();
   });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", () => {
+      resizeAll();
+      drawNext();
+    });
+  }
 }
 
 function clearHoldTimers() {

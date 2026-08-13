@@ -14,6 +14,7 @@
   --station-a: #13b9a4;
   --station-b: #ffcf4f;
   --station-c: #ff6f61;
+  --app-height: 100dvh;
 }
 
 * {
@@ -22,7 +23,9 @@
 
 html,
 body {
+  height: 100%;
   min-height: 100%;
+  overscroll-behavior: none;
 }
 
 html {
@@ -128,6 +131,10 @@ button {
 }
 
 .mobile-next {
+  display: none;
+}
+
+.mobile-status {
   display: none;
 }
 
@@ -514,11 +521,19 @@ button {
 @media (orientation: portrait) {
   .app-shell {
     justify-content: start;
+    gap: 9px;
+    height: var(--app-height);
+    min-height: var(--app-height);
+    padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
   }
 
   .top-bar {
-    align-items: stretch;
-    padding: 7px;
+    display: grid;
+    grid-template-columns: minmax(92px, 0.9fr) minmax(112px, 1.15fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    max-width: 100%;
   }
 
   .title-lockup {
@@ -527,49 +542,94 @@ button {
 
   .mobile-next {
     display: grid;
-    grid-template-columns: minmax(56px, auto) 96px;
+    grid-template-columns: 1fr;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
     min-width: 0;
-    margin-right: auto;
-    padding-left: 4px;
+    padding-left: 0;
   }
 
   .mobile-next span {
     color: #315d66;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 950;
+    line-height: 1;
+  }
+
+  .mobile-status {
+    display: grid;
+    align-content: center;
+    justify-items: start;
+    min-width: 0;
+    gap: 3px;
+    padding: 0 2px;
+    color: #15363f;
+  }
+
+  .mobile-status strong,
+  .mobile-status span {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    letter-spacing: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-status strong {
+    font-size: clamp(13px, 3.5vw, 16px);
+    font-weight: 950;
+    line-height: 1.05;
+  }
+
+  .mobile-status span {
+    color: #315d66;
+    font-size: clamp(15px, 4.4vw, 20px);
+    font-weight: 950;
+    line-height: 1;
   }
 
   .top-actions {
+    justify-self: end;
     margin-left: 0;
   }
 
   .play-layout {
     grid-template-columns: 1fr;
     align-items: start;
+    flex: 0 0 auto;
+    gap: 9px;
+    min-height: 0;
+  }
+
+  .board-zone {
+    gap: 9px;
   }
 
   .board-frame {
-    width: min(84vw, 350px, calc((100svh - 280px) / 2));
+    width: min(84vw, 350px, calc((var(--app-height) - 222px) / 2));
     min-width: min(240px, 86vw);
   }
 
   .hud {
-    width: min(100%, 360px);
-    justify-self: center;
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .score-row,
-  .journey-panel,
-  .route,
-  .hud .primary-button {
-    grid-column: 1 / -1;
-  }
-
-  .next-panel {
     display: none;
+  }
+
+  .controls {
+    width: min(100%, 380px);
+    gap: 8px;
+    padding-bottom: max(18px, env(safe-area-inset-bottom));
+  }
+
+  .control-button {
+    min-height: 58px;
+    font-size: clamp(26px, 8vw, 34px);
+    touch-action: manipulation;
+  }
+
+  #mobileNextCanvas {
+    width: min(102px, 25vw);
+    height: 54px;
   }
 }
 
@@ -595,18 +655,32 @@ button {
 }
 
 @media (max-width: 390px) and (orientation: portrait) {
-  .mobile-next {
-    grid-template-columns: 76px;
-    gap: 2px;
+  .top-bar {
+    grid-template-columns: 82px minmax(96px, 1fr) auto;
+    gap: 6px;
+    padding: 7px;
   }
 
   .mobile-next span {
-    font-size: 11px;
+    font-size: 10px;
   }
 
   #mobileNextCanvas {
-    width: 76px;
-    height: 50px;
+    width: 82px;
+    height: 48px;
+  }
+
+  .icon-button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .controls {
+    gap: 6px;
+  }
+
+  .control-button {
+    min-height: 54px;
   }
 }
 

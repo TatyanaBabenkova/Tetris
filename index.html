@@ -10,7 +10,7 @@
     <meta name="theme-color" content="#13b9a4">
     <meta name="description" content="Локальная веб-игра Тетрис для ИРС Попутчик.">
     <title>Тетрис - Попутчик</title>
-    <link rel="stylesheet" href="styles.css?v=20260813-fix3">
+    <link rel="stylesheet" href="styles.css?v=20260813-fix4">
   </head>
   <body>
     <canvas id="sceneCanvas" class="scene-canvas" aria-hidden="true"></canvas>
@@ -28,6 +28,11 @@
         <div class="mobile-next">
           <span>Дальше</span>
           <canvas id="mobileNextCanvas" aria-label="Следующая фигура" role="img"></canvas>
+        </div>
+
+        <div class="mobile-status" aria-label="Показатели игры">
+          <strong id="mobileStationName">Ур. 1 · Летний луг</strong>
+          <span id="mobileScoreValue">0 очков</span>
         </div>
 
         <div class="top-actions">
@@ -134,6 +139,6 @@
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-    <script src="game.js?v=20260813-fix3" defer></script>
+    <script src="game.js?v=20260813-fix4" defer></script>
   </body>
 </html>
