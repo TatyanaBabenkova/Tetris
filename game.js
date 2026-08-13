@@ -235,13 +235,12 @@ let assetWarningShown = false;
 const missingAssets = new Set();
 let audioCtx = null;
 let masterGain = null;
-let musicTimer = 0;
-let musicStep = 0;
 let softDropTimer = 0;
 let horizontalTimer = 0;
 let touchStart = null;
 let touchMoveDebt = 0;
 let touchDropMark = 0;
+let lastPreviewKey = "";
 const sceneImages = {
   levels: STATIONS.map((station) => loadSceneImage(station.image))
 };
@@ -370,6 +369,19 @@ function resizeAll() {
   mobileNextMetrics = { width: mobileNextSize.width, height: mobileNextSize.height };
 }
 
+function syncPreviewMetrics(canvas, ctx, metrics) {
+  const rect = canvas.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return metrics;
+  const needsResize =
+    Math.abs(rect.width - metrics.width) > 0.5 ||
+    Math.abs(rect.height - metrics.height) > 0.5 ||
+    canvas.width <= 1 ||
+    canvas.height <= 1;
+  if (!needsResize) return metrics;
+  const size = resizeCanvas(canvas, ctx);
+  return { width: size.width, height: size.height };
+}
+
 function setTheme() {
   const station = STATIONS[levelIndex];
   document.documentElement.style.setProperty("--station-a", station.accent);
@@ -471,7 +483,6 @@ function movePlayer(direction) {
   if (!canControl()) return;
   if (!collides(player, direction, 0)) {
     player.x += direction;
-    playEffect("move");
   }
 }
 
@@ -604,6 +615,7 @@ function spawnPiece() {
   player.x = Math.floor(COLS / 2) - Math.ceil(player.matrix[0].length / 2);
   player.y = player.type === "I" ? -1 : 0;
   nextPiece = makePiece(nextType());
+  lastPreviewKey = "";
   drawNext();
 
   if (collides(player)) {
@@ -631,7 +643,6 @@ function togglePause(force) {
   paused = typeof force === "boolean" ? force : !paused;
   if (paused) {
     showModal(pauseScreen);
-    stopMusic();
   } else {
     hideModal(pauseScreen);
     resumeAudio();
@@ -657,6 +668,7 @@ function update(time = 0) {
   }
 
   drawBoard();
+  refreshNextPreview();
   requestAnimationFrame(update);
 }
 
@@ -838,8 +850,34 @@ function drawIcon(ctx, type, cx, cy, size, color) {
 }
 
 function drawNext() {
+  nextMetrics = syncPreviewMetrics(nextCanvas, nextCtx, nextMetrics);
+  mobileNextMetrics = syncPreviewMetrics(mobileNextCanvas, mobileNextCtx, mobileNextMetrics);
   drawNextPreview(nextCtx, nextMetrics);
   drawNextPreview(mobileNextCtx, mobileNextMetrics);
+  lastPreviewKey = getPreviewKey();
+}
+
+function refreshNextPreview() {
+  const before = getPreviewKey();
+  nextMetrics = syncPreviewMetrics(nextCanvas, nextCtx, nextMetrics);
+  mobileNextMetrics = syncPreviewMetrics(mobileNextCanvas, mobileNextCtx, mobileNextMetrics);
+  const after = getPreviewKey();
+  if (after !== lastPreviewKey || after !== before) {
+    drawNextPreview(nextCtx, nextMetrics);
+    drawNextPreview(mobileNextCtx, mobileNextMetrics);
+    lastPreviewKey = after;
+  }
+}
+
+function getPreviewKey() {
+  const nextTypeName = nextPiece ? nextPiece.type : "empty";
+  return [
+    nextTypeName,
+    Math.round(nextMetrics.width),
+    Math.round(nextMetrics.height),
+    Math.round(mobileNextMetrics.width),
+    Math.round(mobileNextMetrics.height)
+  ].join(":");
 }
 
 function drawNextPreview(ctx, metrics) {
@@ -1363,7 +1401,6 @@ function resumeAudio() {
     return audioCtx
       .resume()
       .then(() => {
-        startMusic();
         return true;
       })
       .catch(() => {
@@ -1371,30 +1408,7 @@ function resumeAudio() {
         return false;
       });
   }
-  startMusic();
   return Promise.resolve(true);
-}
-
-function startMusic() {
-  if (muted || !audioCtx || musicTimer) return;
-  const melody = [392, 494, 523, 587, 523, 494, 440, 392, 330, 392, 440, 494];
-  musicTimer = window.setInterval(() => {
-    if (!running || paused || gameOver || muted) return;
-    const note = melody[musicStep % melody.length];
-    const accent = musicStep % 4 === 0 ? 0.06 : 0.035;
-    playTone(note, 0.13, "triangle", accent);
-    if (musicStep % 3 === 0) {
-      playTone(note / 2, 0.18, "sine", 0.025);
-    }
-    musicStep += 1;
-  }, 260);
-}
-
-function stopMusic() {
-  if (musicTimer) {
-    clearInterval(musicTimer);
-    musicTimer = 0;
-  }
 }
 
 function playEffect(name) {
@@ -1403,14 +1417,13 @@ function playEffect(name) {
   if (!audioCtx || !masterGain) return;
 
   const effects = {
-    move: [330, 0.035, "square", 0.018],
-    rotate: [520, 0.055, "triangle", 0.026],
-    land: [190, 0.06, "sine", 0.025],
-    drop: [140, 0.09, "sawtooth", 0.032],
-    clear: [660, 0.12, "triangle", 0.055],
-    level: [880, 0.18, "triangle", 0.06],
-    start: [523, 0.16, "triangle", 0.05],
-    gameover: [120, 0.24, "sine", 0.055]
+    rotate: [500, 0.045, "triangle", 0.014],
+    land: [170, 0.055, "sine", 0.018],
+    drop: [145, 0.075, "sawtooth", 0.022],
+    clear: [660, 0.11, "triangle", 0.04],
+    level: [820, 0.16, "triangle", 0.045],
+    start: [523, 0.12, "triangle", 0.026],
+    gameover: [120, 0.2, "sine", 0.034]
   };
   const effect = effects[name];
   if (!effect) return;
@@ -1445,9 +1458,7 @@ function toggleSound() {
   muted = !muted;
   writeStorage(STORAGE_KEYS.sound, muted ? "off" : "on");
   updateSoundButton();
-  if (muted) {
-    stopMusic();
-  } else {
+  if (!muted) {
     resumeAudio().then((isReady) => {
       if (isReady) playEffect("start");
     });
@@ -1489,15 +1500,16 @@ function bindControls() {
       resumeAudio();
       handleAction(action);
       if (action === "down") {
-        softDropTimer = window.setInterval(() => handleAction("down"), 70);
+        softDropTimer = window.setInterval(() => handleAction("down"), 95);
       }
       if (action === "left" || action === "right") {
-        horizontalTimer = window.setInterval(() => handleAction(action), 115);
+        horizontalTimer = window.setInterval(() => handleAction(action), 105);
       }
     });
     button.addEventListener("pointerup", clearHoldTimers);
     button.addEventListener("pointerleave", clearHoldTimers);
     button.addEventListener("pointercancel", clearHoldTimers);
+    button.addEventListener("lostpointercapture", clearHoldTimers);
   });
 
   gameCanvas.addEventListener("pointerdown", (event) => {
@@ -1567,7 +1579,7 @@ function bindControls() {
     if (Math.abs(dx) > Math.abs(dy)) {
       movePlayer(dx > 0 ? 1 : -1);
     } else if (dy > 0) {
-      hardDrop();
+      softDrop();
     } else {
       rotatePlayer();
     }
@@ -1592,6 +1604,9 @@ function bindControls() {
     },
     { passive: true }
   );
+  window.addEventListener("pointerup", clearHoldTimers);
+  window.addEventListener("pointercancel", clearHoldTimers);
+  window.addEventListener("blur", clearHoldTimers);
 
   window.addEventListener("keydown", (event) => {
     if (["ArrowLeft", "ArrowRight", "ArrowDown", "ArrowUp", " ", "Enter"].includes(event.key)) {
@@ -1630,6 +1645,7 @@ function clearHoldTimers() {
 }
 
 function init() {
+  nextPiece = makePiece(nextType());
   renderRoute();
   setTheme();
   updateHud();
