@@ -14,7 +14,6 @@ const STATIONS = [
     name: "Летний луг",
     mode: "meadow",
     image: "assets/level-01-summer-meadow.png",
-    animals: true,
     accent: "#13b9a4",
     glow: "#ffd34d",
     warm: "#ff6f61",
@@ -179,26 +178,14 @@ const PIECES = {
   }
 };
 
-const SCENE_ASSETS = {
-  animals: "assets/animal-sprites.png"
-};
-
-const ANIMAL_SPRITES = [
-  { name: "Лисенок", col: 0, row: 0 },
-  { name: "Заяц", col: 1, row: 0 },
-  { name: "Медвежонок", col: 2, row: 0 },
-  { name: "Ежик", col: 0, row: 1 },
-  { name: "Белочка", col: 1, row: 1 },
-  { name: "Птичка", col: 2, row: 1 }
-];
-
 const sceneCanvas = document.getElementById("sceneCanvas");
 const sceneCtx = sceneCanvas.getContext("2d");
-const boardFrame = document.getElementById("boardFrame");
 const gameCanvas = document.getElementById("gameCanvas");
 const gameCtx = gameCanvas.getContext("2d");
 const nextCanvas = document.getElementById("nextCanvas");
 const nextCtx = nextCanvas.getContext("2d");
+const mobileNextCanvas = document.getElementById("mobileNextCanvas");
+const mobileNextCtx = mobileNextCanvas.getContext("2d");
 
 const scoreValue = document.getElementById("scoreValue");
 const recordValue = document.getElementById("recordValue");
@@ -208,7 +195,6 @@ const linesValue = document.getElementById("linesValue");
 const levelProgress = document.getElementById("levelProgress");
 const routeTrack = document.getElementById("routeTrack");
 const muteButton = document.getElementById("muteButton");
-const sceneryButton = document.getElementById("sceneryButton");
 const pauseButton = document.getElementById("pauseButton");
 const newGameButton = document.getElementById("newGameButton");
 const startButton = document.getElementById("startButton");
@@ -241,11 +227,12 @@ let lastTime = 0;
 let sceneClock = 0;
 let boardMetrics = { width: 300, height: 600, cell: 30, x: 0, y: 0 };
 let nextMetrics = { width: 120, height: 120 };
+let mobileNextMetrics = { width: 120, height: 80 };
 let sceneMetrics = { width: window.innerWidth, height: window.innerHeight };
 let sparks = [];
-let animalEvents = [];
-let nextAnimalAt = 1400;
 let toastTimer = 0;
+let assetWarningShown = false;
+const missingAssets = new Set();
 let audioCtx = null;
 let masterGain = null;
 let musicTimer = 0;
@@ -253,9 +240,10 @@ let musicStep = 0;
 let softDropTimer = 0;
 let horizontalTimer = 0;
 let touchStart = null;
+let touchMoveDebt = 0;
+let touchDropMark = 0;
 const sceneImages = {
-  levels: STATIONS.map((station) => loadSceneImage(station.image)),
-  animals: loadSceneImage(SCENE_ASSETS.animals)
+  levels: STATIONS.map((station) => loadSceneImage(station.image))
 };
 
 function createBoard() {
@@ -265,11 +253,26 @@ function createBoard() {
 function loadSceneImage(src) {
   const image = new Image();
   image.decoding = "async";
+  image.assetPath = src;
   image.src = src;
   image.addEventListener("load", () => {
     drawNext();
   });
+  image.addEventListener("error", () => {
+    missingAssets.add(src);
+    image.failed = true;
+    showMissingAssetWarning();
+  });
   return image;
+}
+
+function showMissingAssetWarning() {
+  if (assetWarningShown || missingAssets.size === 0) return;
+  assetWarningShown = true;
+  window.setTimeout(() => {
+    showToast("Не найдены картинки уровней");
+    console.warn("Missing local assets:", [...missingAssets]);
+  }, 400);
 }
 
 function readNumber(key, fallback) {
@@ -331,14 +334,16 @@ function makePiece(type) {
 function resizeCanvas(canvas, ctx) {
   const rect = canvas.getBoundingClientRect();
   const ratio = Math.min(window.devicePixelRatio || 1, 2);
-  const width = Math.max(1, Math.round(rect.width * ratio));
-  const height = Math.max(1, Math.round(rect.height * ratio));
+  const cssWidth = Math.max(1, rect.width);
+  const cssHeight = Math.max(1, rect.height);
+  const width = Math.max(1, Math.round(cssWidth * ratio));
+  const height = Math.max(1, Math.round(cssHeight * ratio));
   if (canvas.width !== width || canvas.height !== height) {
     canvas.width = width;
     canvas.height = height;
   }
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-  return { width: rect.width, height: rect.height, ratio };
+  return { width: cssWidth, height: cssHeight, ratio };
 }
 
 function resizeAll() {
@@ -360,6 +365,9 @@ function resizeAll() {
 
   const nextSize = resizeCanvas(nextCanvas, nextCtx);
   nextMetrics = { width: nextSize.width, height: nextSize.height };
+
+  const mobileNextSize = resizeCanvas(mobileNextCanvas, mobileNextCtx);
+  mobileNextMetrics = { width: mobileNextSize.width, height: mobileNextSize.height };
 }
 
 function setTheme() {
@@ -415,8 +423,6 @@ function newGame() {
   dropCounter = 0;
   sceneClock = 0;
   dropInterval = getDropInterval();
-  animalEvents = [];
-  nextAnimalAt = 900;
   player = makePiece(nextType());
   nextPiece = makePiece(nextType());
   running = true;
@@ -430,8 +436,9 @@ function newGame() {
   updateHud();
   drawNext();
   showToast("Отправление");
-  resumeAudio();
-  playEffect("start");
+  resumeAudio().then((isReady) => {
+    if (isReady) playEffect("start");
+  });
 }
 
 function hideModal(modal) {
@@ -581,8 +588,6 @@ function sweepLines() {
       spawnSparks(row);
     }
     if (levelIndex !== oldLevel) {
-      animalEvents = [];
-      nextAnimalAt = performance.now() + 2600;
       setTheme();
       showToast(`Уровень ${levelIndex + 1}: ${STATIONS[levelIndex].name}`);
       playEffect("level");
@@ -833,15 +838,20 @@ function drawIcon(ctx, type, cx, cy, size, color) {
 }
 
 function drawNext() {
-  const { width, height } = nextMetrics;
-  nextCtx.clearRect(0, 0, width, height);
+  drawNextPreview(nextCtx, nextMetrics);
+  drawNextPreview(mobileNextCtx, mobileNextMetrics);
+}
 
-  const gradient = nextCtx.createLinearGradient(0, 0, width, height);
+function drawNextPreview(ctx, metrics) {
+  const { width, height } = metrics;
+  ctx.clearRect(0, 0, width, height);
+
+  const gradient = ctx.createLinearGradient(0, 0, width, height);
   gradient.addColorStop(0, "rgba(255, 255, 255, 0.62)");
   gradient.addColorStop(1, "rgba(255, 211, 77, 0.18)");
-  nextCtx.fillStyle = gradient;
-  roundRect(nextCtx, 0, 0, width, height, 8);
-  nextCtx.fill();
+  ctx.fillStyle = gradient;
+  roundRect(ctx, 0, 0, width, height, 8);
+  ctx.fill();
 
   if (!nextPiece) return;
   const matrix = nextPiece.matrix;
@@ -854,7 +864,7 @@ function drawNext() {
   for (let y = 0; y < matrix.length; y += 1) {
     for (let x = 0; x < matrix[y].length; x += 1) {
       if (matrix[y][x]) {
-        drawBlock(nextCtx, ox + x * cell, oy + y * cell, cell, nextPiece.type, 1);
+        drawBlock(ctx, ox + x * cell, oy + y * cell, cell, nextPiece.type, 1);
       }
     }
   }
@@ -918,11 +928,6 @@ function drawScene(time) {
     drawFallbackLandscape(station, w, h, t);
   }
 
-  if (station.animals) {
-    drawAnimalGuests(w, h, time);
-  } else {
-    animalEvents = [];
-  }
   drawForegroundMeadow(station, w, h, t);
   drawTrainInterior(station, w, h, t);
 }
@@ -990,7 +995,7 @@ function drawStationPictureOverlay(station, w, h) {
     wash.addColorStop(0, "rgba(42, 46, 126, 0.3)");
     wash.addColorStop(0.62, "rgba(255, 111, 97, 0.12)");
     wash.addColorStop(1, "rgba(19, 50, 58, 0.12)");
-  } else if (station.mode === "winter") {
+  } else if (station.mode === "snowyForest") {
     wash.addColorStop(0, "rgba(232, 250, 255, 0.28)");
     wash.addColorStop(0.68, "rgba(255, 255, 255, 0.26)");
     wash.addColorStop(1, "rgba(115, 197, 232, 0.12)");
@@ -1010,7 +1015,7 @@ function drawStationPictureOverlay(station, w, h) {
   sceneCtx.fillStyle = wash;
   sceneCtx.fillRect(0, 0, w, h);
 
-  if (station.mode === "winter") {
+  if (station.mode === "snowyForest") {
     drawSnow(w, h, performance.now() * 0.001);
   }
 
@@ -1031,90 +1036,6 @@ function drawWindowMotionStreaks(w, h, t) {
     sceneCtx.stroke();
   }
   sceneCtx.restore();
-}
-
-function drawAnimalGuests(w, h, time) {
-  const image = sceneImages.animals;
-  if (!isImageReady(image)) return;
-
-  const boardRect = getBoardSceneRect(w, h);
-  if (!boardRect) return;
-
-  scheduleAnimalGuest(w, boardRect, time);
-  animalEvents = animalEvents.filter((event) => time - event.start < event.duration);
-
-  const cellWidth = image.width / 3;
-  const cellHeight = image.height / 2;
-
-  for (const event of animalEvents) {
-    const elapsed = time - event.start;
-    const progress = Math.max(0, Math.min(1, elapsed / event.duration));
-    const reveal = smoothStep(Math.sin(progress * Math.PI));
-    const sprite = ANIMAL_SPRITES[event.sprite];
-    const spriteWidth = Math.min(boardRect.width * event.widthRatio, h * 0.18, event.maxWidth);
-    const spriteHeight = spriteWidth * (cellHeight / cellWidth);
-    const visiblePart = 0.1 + reveal * 0.18;
-    const x =
-      event.side === "left"
-        ? boardRect.left - spriteWidth * visiblePart
-        : boardRect.right - spriteWidth * (1 - visiblePart);
-    const yCenter = boardRect.top + boardRect.height * event.yRatio;
-    const y = yCenter - spriteHeight * 0.5 + Math.sin(progress * Math.PI * 2) * 2;
-
-    sceneCtx.save();
-    sceneCtx.globalAlpha = Math.min(1, reveal * 1.4);
-    sceneCtx.drawImage(
-      image,
-      sprite.col * cellWidth,
-      sprite.row * cellHeight,
-      cellWidth,
-      cellHeight,
-      x,
-      y,
-      spriteWidth,
-      spriteHeight
-    );
-    sceneCtx.restore();
-  }
-}
-
-function getBoardSceneRect(w, h) {
-  if (!boardFrame) return null;
-  const rect = boardFrame.getBoundingClientRect();
-  if (rect.width <= 0 || rect.height <= 0) return null;
-  return {
-    left: Math.max(0, Math.min(w, rect.left)),
-    right: Math.max(0, Math.min(w, rect.right)),
-    top: Math.max(0, Math.min(h, rect.top)),
-    bottom: Math.max(0, Math.min(h, rect.bottom)),
-    width: Math.max(1, Math.min(w, rect.width)),
-    height: Math.max(1, Math.min(h, rect.height))
-  };
-}
-
-function scheduleAnimalGuest(w, boardRect, time) {
-  if (time < nextAnimalAt || animalEvents.length > 1) return;
-  const leftSpace = boardRect.left;
-  const rightSpace = w - boardRect.right;
-  let side = Math.random() > 0.5 ? "right" : "left";
-  if (leftSpace < 72 && rightSpace >= 72) side = "right";
-  if (rightSpace < 72 && leftSpace >= 72) side = "left";
-
-  animalEvents.push({
-    sprite: Math.floor(Math.random() * ANIMAL_SPRITES.length),
-    start: time,
-    duration: 2800 + Math.random() * 700,
-    side,
-    yRatio: 0.32 + Math.random() * 0.46,
-    widthRatio: 0.34 + Math.random() * 0.08,
-    maxWidth: 148 + Math.random() * 22
-  });
-  nextAnimalAt = time + 3600 + Math.random() * 4200;
-}
-
-function smoothStep(value) {
-  const clamped = Math.max(0, Math.min(1, value));
-  return clamped * clamped * (3 - 2 * clamped);
 }
 
 function drawForegroundMeadow(station, w, h, t) {
@@ -1200,7 +1121,7 @@ function drawLandscape(station, w, h, t) {
 
   if (station.mode === "city") {
     drawCity(w, h, horizon, t);
-  } else if (station.mode === "winter") {
+  } else if (station.mode === "snowyForest") {
     drawSnow(w, h, t);
     drawPines(w, h, horizon, t, "#3aaed0", "#f7fdff");
   } else if (station.mode === "sea") {
@@ -1216,7 +1137,7 @@ function drawLandscape(station, w, h, t) {
 
 function drawHills(w, h, horizon, t, station) {
   const offset = (t * 24) % 260;
-  sceneCtx.fillStyle = station.mode === "winter" ? "#e9fbff" : "rgba(55, 160, 112, 0.45)";
+  sceneCtx.fillStyle = station.mode === "snowyForest" ? "#e9fbff" : "rgba(55, 160, 112, 0.45)";
   sceneCtx.beginPath();
   sceneCtx.moveTo(0, horizon);
   for (let x = -260; x <= w + 260; x += 130) {
@@ -1417,23 +1338,41 @@ function showToast(message) {
 }
 
 function ensureAudio() {
-  if (muted) return;
+  if (muted) return false;
   if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const AudioConstructor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioConstructor) {
+      muted = true;
+      writeStorage(STORAGE_KEYS.sound, "off");
+      updateSoundButton();
+      showToast("Звук недоступен");
+      return false;
+    }
+    audioCtx = new AudioConstructor();
     masterGain = audioCtx.createGain();
     masterGain.gain.value = 0.18;
     masterGain.connect(audioCtx.destination);
   }
+  return true;
 }
 
 function resumeAudio() {
-  if (muted) return;
-  ensureAudio();
-  if (!audioCtx) return;
+  if (muted) return Promise.resolve(false);
+  if (!ensureAudio() || !audioCtx) return Promise.resolve(false);
   if (audioCtx.state === "suspended") {
-    audioCtx.resume();
+    return audioCtx
+      .resume()
+      .then(() => {
+        startMusic();
+        return true;
+      })
+      .catch(() => {
+        showToast("Нажмите звук еще раз");
+        return false;
+      });
   }
   startMusic();
+  return Promise.resolve(true);
 }
 
 function startMusic() {
@@ -1502,13 +1441,6 @@ function updateSoundButton() {
   muteButton.querySelector("span").textContent = muted ? "♪/" : "♪";
 }
 
-function updateSceneryButton() {
-  const label = sceneryPaused ? "Запустить вид за окном" : "Остановить вид за окном";
-  sceneryButton.setAttribute("aria-label", label);
-  sceneryButton.setAttribute("title", label);
-  sceneryButton.querySelector("span").textContent = sceneryPaused ? "▶" : "≈";
-}
-
 function toggleSound() {
   muted = !muted;
   writeStorage(STORAGE_KEYS.sound, muted ? "off" : "on");
@@ -1516,19 +1448,32 @@ function toggleSound() {
   if (muted) {
     stopMusic();
   } else {
-    resumeAudio();
-    playEffect("start");
+    resumeAudio().then((isReady) => {
+      if (isReady) playEffect("start");
+    });
   }
 }
 
 function toggleScenery() {
   sceneryPaused = !sceneryPaused;
   writeStorage(STORAGE_KEYS.scenery, sceneryPaused ? "paused" : "moving");
-  updateSceneryButton();
   showToast(sceneryPaused ? "Вид остановлен" : "Вид едет");
 }
 
+function canToggleSceneryFrom(target) {
+  if (!(target instanceof Element)) return false;
+  return (
+    target === sceneCanvas ||
+    target === document.body ||
+    target === document.documentElement ||
+    target.classList.contains("app-shell") ||
+    target.classList.contains("play-layout") ||
+    target.classList.contains("board-zone")
+  );
+}
+
 function handleAction(action) {
+  resumeAudio();
   if (action === "left") movePlayer(-1);
   if (action === "right") movePlayer(1);
   if (action === "rotate") rotatePlayer();
@@ -1541,6 +1486,7 @@ function bindControls() {
     const action = button.dataset.action;
     button.addEventListener("pointerdown", (event) => {
       event.preventDefault();
+      resumeAudio();
       handleAction(action);
       if (action === "down") {
         softDropTimer = window.setInterval(() => handleAction("down"), 70);
@@ -1555,16 +1501,65 @@ function bindControls() {
   });
 
   gameCanvas.addEventListener("pointerdown", (event) => {
-    touchStart = { x: event.clientX, y: event.clientY };
+    event.preventDefault();
+    resumeAudio();
+    touchMoveDebt = 0;
+    touchDropMark = event.clientY;
+    touchStart = {
+      x: event.clientX,
+      y: event.clientY,
+      lastX: event.clientX,
+      moved: false
+    };
+    if (gameCanvas.setPointerCapture && !gameCanvas.hasPointerCapture?.(event.pointerId)) {
+      gameCanvas.setPointerCapture(event.pointerId);
+    }
+  });
+
+  gameCanvas.addEventListener("pointermove", (event) => {
+    if (!touchStart) return;
+    event.preventDefault();
+    const cellStep = Math.max(18, boardMetrics.cell * 0.62);
+    touchMoveDebt += event.clientX - touchStart.lastX;
+    touchStart.lastX = event.clientX;
+
+    while (touchMoveDebt >= cellStep) {
+      movePlayer(1);
+      touchMoveDebt -= cellStep;
+      touchStart.moved = true;
+    }
+
+    while (touchMoveDebt <= -cellStep) {
+      movePlayer(-1);
+      touchMoveDebt += cellStep;
+      touchStart.moved = true;
+    }
+
+    const dropStep = Math.max(22, boardMetrics.cell * 0.82);
+    if (event.clientY - touchDropMark >= dropStep) {
+      softDrop();
+      touchDropMark = event.clientY;
+      touchStart.moved = true;
+    }
   });
 
   gameCanvas.addEventListener("pointerup", (event) => {
     if (!touchStart) return;
     const dx = event.clientX - touchStart.x;
     const dy = event.clientY - touchStart.y;
+    const wasDrag = touchStart.moved;
     touchStart = null;
+    touchMoveDebt = 0;
 
-    if (Math.abs(dx) < 24 && Math.abs(dy) < 24) {
+    if (gameCanvas.releasePointerCapture && gameCanvas.hasPointerCapture?.(event.pointerId)) {
+      gameCanvas.releasePointerCapture(event.pointerId);
+    }
+
+    if (wasDrag) {
+      return;
+    }
+
+    if (Math.abs(dx) < 22 && Math.abs(dy) < 22) {
       rotatePlayer();
       return;
     }
@@ -1577,6 +1572,26 @@ function bindControls() {
       rotatePlayer();
     }
   });
+
+  gameCanvas.addEventListener("pointercancel", () => {
+    touchStart = null;
+    touchMoveDebt = 0;
+  });
+
+  document.addEventListener("click", (event) => {
+    if (canToggleSceneryFrom(event.target)) {
+      resumeAudio();
+      toggleScenery();
+    }
+  });
+
+  window.addEventListener(
+    "pointerdown",
+    () => {
+      resumeAudio();
+    },
+    { passive: true }
+  );
 
   window.addEventListener("keydown", (event) => {
     if (["ArrowLeft", "ArrowRight", "ArrowDown", "ArrowUp", " ", "Enter"].includes(event.key)) {
@@ -1596,7 +1611,6 @@ function bindControls() {
   newGameButton.addEventListener("click", newGame);
   resumeButton.addEventListener("click", () => togglePause(false));
   pauseButton.addEventListener("click", () => togglePause());
-  sceneryButton.addEventListener("click", toggleScenery);
   muteButton.addEventListener("click", toggleSound);
   window.addEventListener("resize", () => {
     resizeAll();
@@ -1620,7 +1634,6 @@ function init() {
   setTheme();
   updateHud();
   updateSoundButton();
-  updateSceneryButton();
   pauseButton.disabled = true;
   resizeAll();
   drawNext();
