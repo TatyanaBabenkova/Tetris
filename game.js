@@ -401,7 +401,7 @@ function updateHud() {
   scoreValue.textContent = formatter.format(score);
   recordValue.textContent = formatter.format(Math.max(record, score));
   stationName.textContent = `Уровень ${levelIndex + 1}: ${station.name}`;
-  mobileStationName.textContent = `Ур. ${levelIndex + 1} · ${station.name}`;
+  mobileStationName.textContent = `${levelIndex + 1} · ${station.name}`;
   mobileScoreValue.textContent = `${formatter.format(score)} очков`;
   levelValue.textContent = String(levelIndex + 1);
   linesValue.textContent = formatter.format(lines);

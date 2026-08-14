@@ -10,7 +10,7 @@
     <meta name="theme-color" content="#13b9a4">
     <meta name="description" content="Локальная веб-игра Тетрис для ИРС Попутчик.">
     <title>Тетрис - Попутчик</title>
-    <link rel="stylesheet" href="styles.css?v=20260813-fix4">
+    <link rel="stylesheet" href="styles.css?v=20260814-fix7">
   </head>
   <body>
     <canvas id="sceneCanvas" class="scene-canvas" aria-hidden="true"></canvas>
@@ -31,7 +31,7 @@
         </div>
 
         <div class="mobile-status" aria-label="Показатели игры">
-          <strong id="mobileStationName">Ур. 1 · Летний луг</strong>
+          <strong id="mobileStationName">1 · Летний луг</strong>
           <span id="mobileScoreValue">0 очков</span>
         </div>
 
@@ -110,13 +110,26 @@
     </main>
 
     <div id="startScreen" class="modal is-visible" role="dialog" aria-modal="true" aria-labelledby="startTitle">
-      <div class="modal-panel">
-        <div class="ticket-stub" aria-hidden="true">
+      <div class="modal-panel start-panel">
+        <div class="start-decor start-decor-a" aria-hidden="true">
+          <span></span>
+          <span></span>
           <span></span>
           <span></span>
         </div>
+        <div class="start-decor start-decor-b" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="modal-brand" aria-hidden="true">
+          <span class="brand-mark">Т</span>
+          <span>Игра в дороге</span>
+        </div>
         <h2 id="startTitle">Тетрис</h2>
         <p class="modal-copy">Собирайте линии и открывайте новые уровни.</p>
+        <p class="modal-hint">Вид за окном можно остановить касанием по фону и снова запустить таким же касанием.</p>
         <button id="startButton" class="primary-button" type="button">Играть</button>
       </div>
     </div>
@@ -130,7 +143,10 @@
 
     <div id="gameOverScreen" class="modal" role="dialog" aria-modal="true" aria-labelledby="gameOverTitle">
       <div class="modal-panel compact">
-        <p class="modal-kicker">Финиш</p>
+        <div class="modal-brand" aria-hidden="true">
+          <span class="brand-mark">!</span>
+          <span>Финиш</span>
+        </div>
         <h2 id="gameOverTitle">Игра окончена</h2>
         <p class="modal-copy">Счет: <strong id="finalScore">0</strong></p>
         <button id="restartButton" class="primary-button" type="button">Еще раз</button>
@@ -139,6 +155,6 @@
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-    <script src="game.js?v=20260813-fix4" defer></script>
+    <script src="game.js?v=20260814-fix7" defer></script>
   </body>
 </html>
