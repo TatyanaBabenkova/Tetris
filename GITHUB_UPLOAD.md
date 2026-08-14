@@ -19,36 +19,36 @@ assets/
   level-08-night-city.png
   level-09-aurora.png
   level-10-space.png
-  meadow-clover.png
   meadow-daisy.png
-  meadow-honeycomb.png
   meadow-leaf.png
   meadow-strawberry.png
-  forest-acorn.png
   forest-amanita.png
-  forest-birch-leaf.png
   forest-boletus.png
   forest-pinecone.png
   village-apple.png
-  village-fence-plank.png
   village-lily-pad.png
   village-sunflower.png
-  village-water-drop.png
-  city-asphalt.png
-  city-brick.png
   city-concrete.png
   city-traffic-light.png
   city-window.png
   sea-anchor.png
   sea-lifebuoy.png
-  sea-pearl.png
-  sea-shell.png
   sea-wave.png
   mountain-compass.png
   mountain-crystal.png
-  mountain-edelweiss.png
   mountain-peak.png
-  mountain-rock.png
+  snow-fir.png
+  snow-rowan.png
+  snow-snowflake.png
+  night-lightning.png
+  night-neon-star.png
+  night-window.png
+  aurora-crystal.png
+  aurora-droplets.png
+  aurora-orb.png
+  space-comet.png
+  space-planet.png
+  space-star.png
 ```
 
 Важно:

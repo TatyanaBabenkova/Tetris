@@ -8,25 +8,25 @@
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
     >
     <meta name="theme-color" content="#13b9a4">
-    <meta name="description" content="Локальная веб-игра Блок-пазл в дорогу для ИРС Попутчик.">
-    <title>Блок-пазл в дорогу - Попутчик</title>
-    <link rel="stylesheet" href="styles.css?v=20260814-fix18">
+    <meta name="description" content="Локальная веб-игра Мир за окном для ИРС Попутчик.">
+    <title>Мир за окном - Попутчик</title>
+    <link rel="stylesheet" href="styles.css?v=20260814-fix24">
   </head>
   <body>
     <canvas id="sceneCanvas" class="scene-canvas" aria-hidden="true"></canvas>
+    <div class="train-window-frame" aria-hidden="true"></div>
 
-    <main class="app-shell" aria-label="Блок-пазл в дорогу">
+    <main class="app-shell" aria-label="Мир за окном">
       <header class="top-bar">
         <div class="title-lockup">
-          <div class="title-mark" aria-hidden="true">Б</div>
+          <div class="title-mark" aria-hidden="true">М</div>
           <div>
             <p>ИРС Попутчик</p>
-            <h1>Блок-пазл в дорогу</h1>
+            <h1>Мир за окном</h1>
           </div>
         </div>
 
         <div class="mobile-next">
-          <span>Дальше</span>
           <canvas id="mobileNextCanvas" aria-label="Следующая фигура" role="img"></canvas>
         </div>
 
@@ -74,7 +74,6 @@
 
         <aside class="hud" aria-label="Показатели игры">
           <div class="next-panel">
-            <span>Дальше</span>
             <canvas id="nextCanvas" aria-label="Следующая фигура" role="img"></canvas>
           </div>
 
@@ -116,7 +115,7 @@
         <span class="cover-vignette" aria-hidden="true"></span>
         <span class="cover-title-card">
           <span class="cover-kicker">Игра в дороге</span>
-          <span id="coverTitle" class="cover-title">Блок-пазл в дорогу</span>
+          <span id="coverTitle" class="cover-title">Мир за окном</span>
           <span class="cover-note">Нажмите, чтобы продолжить</span>
         </span>
       </button>
@@ -124,22 +123,20 @@
 
     <div id="startScreen" class="modal" role="dialog" aria-modal="true" aria-labelledby="startTitle">
       <div class="modal-panel start-panel">
-        <h2 id="startTitle" class="visually-hidden">Блок-пазл в дорогу</h2>
+        <h2 id="startTitle" class="visually-hidden">Мир за окном</h2>
         <div class="start-info">
           <div class="modal-brand" aria-hidden="true">
             <span>Игра в дороге</span>
           </div>
           <div class="start-decor start-decor-a" aria-hidden="true">
             <span><img src="assets/meadow-daisy.png" alt=""></span>
-            <span><img src="assets/meadow-clover.png" alt=""></span>
             <span><img src="assets/meadow-strawberry.png" alt=""></span>
             <span><img src="assets/meadow-leaf.png" alt=""></span>
           </div>
           <div class="start-decor start-decor-b" aria-hidden="true">
-            <span><img src="assets/sea-shell.png" alt=""></span>
-            <span><img src="assets/sea-pearl.png" alt=""></span>
-            <span><img src="assets/sea-wave.png" alt=""></span>
-            <span><img src="assets/sea-lifebuoy.png" alt=""></span>
+            <span><img src="assets/sea-wave.png?v=20260814-art3" alt=""></span>
+            <span><img src="assets/sea-lifebuoy.png?v=20260814-art3" alt=""></span>
+            <span><img src="assets/sea-anchor.png?v=20260814-art3" alt=""></span>
           </div>
           <p class="modal-copy">Собирайте линии и открывайте новые уровни.</p>
           <p class="modal-hint">Вид за окном можно остановить касанием по фону и снова запустить таким же касанием.</p>
@@ -172,6 +169,6 @@
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-    <script src="game.js?v=20260814-fix18" defer></script>
+    <script src="game.js?v=20260814-fix24" defer></script>
   </body>
 </html>

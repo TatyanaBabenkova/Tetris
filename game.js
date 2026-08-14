@@ -2,8 +2,9 @@
 
 const COLS = 10;
 const ROWS = 20;
-const LINES_PER_STATION = 3;
-const SPRITE_SIZE_BOOST = 1.1;
+const LINES_PER_STATION = 8;
+const SPRITE_SIZE_BOOST = 1;
+const SPRITE_ASSET_VERSION = "20260814-art3";
 const STORAGE_KEYS = {
   record: "poputchik-tetris-record",
   sound: "poputchik-tetris-sound",
@@ -121,8 +122,8 @@ const PIECES = {
       [0, 0, 0, 0],
       [0, 0, 0, 0]
     ],
-    color: "#34c8ff",
-    dark: "#1477a3"
+    color: "#e51b23",
+    dark: "#a50d1a"
   },
   J: {
     matrix: [
@@ -130,8 +131,8 @@ const PIECES = {
       [1, 1, 1],
       [0, 0, 0]
     ],
-    color: "#5f8dff",
-    dark: "#284fb0"
+    color: "#e51b23",
+    dark: "#a50d1a"
   },
   L: {
     matrix: [
@@ -139,16 +140,16 @@ const PIECES = {
       [1, 1, 1],
       [0, 0, 0]
     ],
-    color: "#ff9c48",
-    dark: "#ad5720"
+    color: "#e51b23",
+    dark: "#a50d1a"
   },
   O: {
     matrix: [
       [1, 1],
       [1, 1]
     ],
-    color: "#ffd34d",
-    dark: "#b67b05"
+    color: "#e51b23",
+    dark: "#a50d1a"
   },
   S: {
     matrix: [
@@ -156,8 +157,8 @@ const PIECES = {
       [1, 1, 0],
       [0, 0, 0]
     ],
-    color: "#62dd72",
-    dark: "#25823b"
+    color: "#e51b23",
+    dark: "#a50d1a"
   },
   T: {
     matrix: [
@@ -165,8 +166,8 @@ const PIECES = {
       [1, 1, 1],
       [0, 0, 0]
     ],
-    color: "#a373ff",
-    dark: "#5b38bd"
+    color: "#e51b23",
+    dark: "#a50d1a"
   },
   Z: {
     matrix: [
@@ -174,16 +175,16 @@ const PIECES = {
       [0, 1, 1],
       [0, 0, 0]
     ],
-    color: "#ff6575",
-    dark: "#b52d45"
+    color: "#e51b23",
+    dark: "#a50d1a"
   }
 };
 
 const MEADOW_MOTIFS = {
-  I: "clover",
+  I: "leaf",
   J: "daisy",
   L: "berry",
-  O: "honey",
+  O: "daisy",
   S: "leaf",
   T: "daisy",
   Z: "berry"
@@ -192,33 +193,29 @@ const MEADOW_MOTIFS = {
 const MEADOW_SPRITES = {
   daisy: "assets/meadow-daisy.png",
   berry: "assets/meadow-strawberry.png",
-  clover: "assets/meadow-clover.png",
-  leaf: "assets/meadow-leaf.png",
-  honey: "assets/meadow-honeycomb.png"
+  leaf: "assets/meadow-leaf.png"
 };
 
 const FOREST_MOTIFS = {
   I: "pinecone",
   J: "amanita",
   L: "boletus",
-  O: "acorn",
-  S: "leaf",
-  T: "acorn",
+  O: "amanita",
+  S: "pinecone",
+  T: "amanita",
   Z: "boletus"
 };
 
 const FOREST_SPRITES = {
   amanita: "assets/forest-amanita.png",
   boletus: "assets/forest-boletus.png",
-  acorn: "assets/forest-acorn.png",
-  leaf: "assets/forest-birch-leaf.png",
   pinecone: "assets/forest-pinecone.png"
 };
 
 const VILLAGE_MOTIFS = {
-  I: "plank",
+  I: "sunflower",
   J: "apple",
-  L: "drop",
+  L: "lily",
   O: "lily",
   S: "sunflower",
   T: "sunflower",
@@ -228,42 +225,36 @@ const VILLAGE_MOTIFS = {
 const VILLAGE_SPRITES = {
   apple: "assets/village-apple.png",
   sunflower: "assets/village-sunflower.png",
-  lily: "assets/village-lily-pad.png",
-  plank: "assets/village-fence-plank.png",
-  drop: "assets/village-water-drop.png"
+  lily: "assets/village-lily-pad.png"
 };
 
 const CITY_MOTIFS = {
-  I: "asphalt",
-  J: "brick",
+  I: "concrete",
+  J: "window",
   L: "traffic",
   O: "window",
   S: "concrete",
-  T: "brick",
+  T: "traffic",
   Z: "window"
 };
 
 const CITY_SPRITES = {
-  brick: "assets/city-brick.png",
   window: "assets/city-window.png",
   concrete: "assets/city-concrete.png",
-  asphalt: "assets/city-asphalt.png",
   traffic: "assets/city-traffic-light.png"
 };
 
 const SEA_MOTIFS = {
   I: "anchor",
-  J: "shell",
+  J: "wave",
   L: "wave",
-  O: "pearl",
+  O: "lifebuoy",
   S: "lifebuoy",
   T: "wave",
-  Z: "shell"
+  Z: "anchor"
 };
 
 const SEA_SPRITES = {
-  shell: "assets/sea-shell.png",
-  pearl: "assets/sea-pearl.png",
   wave: "assets/sea-wave.png",
   lifebuoy: "assets/sea-lifebuoy.png",
   anchor: "assets/sea-anchor.png"
@@ -271,20 +262,82 @@ const SEA_SPRITES = {
 
 const MOUNTAIN_MOTIFS = {
   I: "crystal",
-  J: "rock",
+  J: "peak",
   L: "peak",
   O: "compass",
-  S: "edelweiss",
+  S: "crystal",
   T: "peak",
-  Z: "rock"
+  Z: "compass"
 };
 
 const MOUNTAIN_SPRITES = {
-  rock: "assets/mountain-rock.png",
   crystal: "assets/mountain-crystal.png",
   peak: "assets/mountain-peak.png",
-  edelweiss: "assets/mountain-edelweiss.png",
   compass: "assets/mountain-compass.png"
+};
+
+const SNOWY_FOREST_MOTIFS = {
+  I: "snowflake",
+  J: "rowan",
+  L: "fir",
+  O: "snowflake",
+  S: "fir",
+  T: "snowflake",
+  Z: "rowan"
+};
+
+const SNOWY_FOREST_SPRITES = {
+  snowflake: "assets/snow-snowflake.png",
+  rowan: "assets/snow-rowan.png",
+  fir: "assets/snow-fir.png"
+};
+
+const NIGHT_CITY_MOTIFS = {
+  I: "lightning",
+  J: "window",
+  L: "star",
+  O: "window",
+  S: "star",
+  T: "lightning",
+  Z: "star"
+};
+
+const NIGHT_CITY_SPRITES = {
+  lightning: "assets/night-lightning.png",
+  window: "assets/night-window.png",
+  star: "assets/night-neon-star.png"
+};
+
+const AURORA_MOTIFS = {
+  I: "droplets",
+  J: "orb",
+  L: "crystal",
+  O: "crystal",
+  S: "droplets",
+  T: "orb",
+  Z: "droplets"
+};
+
+const AURORA_SPRITES = {
+  orb: "assets/aurora-orb.png",
+  crystal: "assets/aurora-crystal.png",
+  droplets: "assets/aurora-droplets.png"
+};
+
+const SPACE_MOTIFS = {
+  I: "comet",
+  J: "planet",
+  L: "comet",
+  O: "planet",
+  S: "star",
+  T: "star",
+  Z: "comet"
+};
+
+const SPACE_SPRITES = {
+  planet: "assets/space-planet.png",
+  star: "assets/space-star.png",
+  comet: "assets/space-comet.png"
 };
 
 const sceneCanvas = document.getElementById("sceneCanvas");
@@ -325,6 +378,7 @@ const formatter = new Intl.NumberFormat("ru-RU");
 
 let board = createBoard();
 let bag = [];
+let decorationBag = [];
 let player = null;
 let nextPiece = null;
 let score = 0;
@@ -340,7 +394,7 @@ let dropCounter = 0;
 let dropInterval = 820;
 let lastTime = 0;
 let sceneClock = 0;
-let boardMetrics = { width: 300, height: 600, cell: 30, x: 0, y: 0 };
+let boardMetrics = { width: 300, height: 600, cell: 30, x: 0, y: 0, ratio: 1 };
 let nextMetrics = { width: 120, height: 120 };
 let mobileNextMetrics = { width: 120, height: 80 };
 let sceneMetrics = { width: window.innerWidth, height: window.innerHeight };
@@ -381,6 +435,18 @@ const seaSpriteImages = Object.fromEntries(
 const mountainSpriteImages = Object.fromEntries(
   Object.entries(MOUNTAIN_SPRITES).map(([key, src]) => [key, loadSpriteImage(src)])
 );
+const snowyForestSpriteImages = Object.fromEntries(
+  Object.entries(SNOWY_FOREST_SPRITES).map(([key, src]) => [key, loadSpriteImage(src)])
+);
+const nightCitySpriteImages = Object.fromEntries(
+  Object.entries(NIGHT_CITY_SPRITES).map(([key, src]) => [key, loadSpriteImage(src)])
+);
+const auroraSpriteImages = Object.fromEntries(
+  Object.entries(AURORA_SPRITES).map(([key, src]) => [key, loadSpriteImage(src)])
+);
+const spaceSpriteImages = Object.fromEntries(
+  Object.entries(SPACE_SPRITES).map(([key, src]) => [key, loadSpriteImage(src)])
+);
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => Array(COLS).fill(null));
@@ -405,7 +471,7 @@ function loadSceneImage(src) {
 function loadSpriteImage(src) {
   const image = new Image();
   image.decoding = "async";
-  image.src = src;
+  image.src = `${src}?v=${SPRITE_ASSET_VERSION}`;
   image.addEventListener("load", () => {
     drawNext();
   });
@@ -474,6 +540,13 @@ function nextType() {
   return bag.pop();
 }
 
+function nextDecorationFlag() {
+  if (decorationBag.length === 0) {
+    decorationBag = shuffle([true, false, false, false, false, false, false, false, false, false]);
+  }
+  return decorationBag.pop();
+}
+
 function cloneMatrix(matrix) {
   return matrix.map((row) => [...row]);
 }
@@ -483,6 +556,7 @@ function makePiece(type, themeIndex = levelIndex) {
   return {
     type,
     themeIndex,
+    decorated: nextDecorationFlag(),
     matrix,
     x: Math.floor(COLS / 2) - Math.ceil(matrix[0].length / 2),
     y: type === "I" ? -1 : 0
@@ -521,7 +595,8 @@ function resizeAll() {
     height: boardSize.height,
     cell,
     x: (boardSize.width - cell * COLS) / 2,
-    y: (boardSize.height - cell * ROWS) / 2
+    y: (boardSize.height - cell * ROWS) / 2,
+    ratio: boardSize.ratio
   };
 
   nextMetrics = syncPreviewMetrics(nextCanvas, nextCtx, nextMetrics);
@@ -594,6 +669,7 @@ function renderRoute() {
 function newGame() {
   board = createBoard();
   bag = [];
+  decorationBag = [];
   sparks = [];
   clearBursts = [];
   score = 0;
@@ -755,7 +831,7 @@ function lockPiece() {
         endGame();
         return;
       }
-      board[boardY][boardX] = createBoardCell(player.type, player.themeIndex);
+      board[boardY][boardX] = createBoardCell(player.type, player.themeIndex, player.decorated);
     }
   }
 
@@ -767,8 +843,8 @@ function lockPiece() {
   updateHud();
 }
 
-function createBoardCell(type, themeIndex = levelIndex) {
-  return { type, themeIndex };
+function createBoardCell(type, themeIndex = levelIndex, decorated = false) {
+  return { type, themeIndex, decorated };
 }
 
 function getCellType(cell) {
@@ -779,6 +855,10 @@ function getCellType(cell) {
 function getCellThemeIndex(cell, fallback = levelIndex) {
   if (!cell || typeof cell === "string") return fallback;
   return Number.isInteger(cell.themeIndex) ? cell.themeIndex : fallback;
+}
+
+function getCellDecorated(cell) {
+  return Boolean(cell && typeof cell !== "string" && cell.decorated);
 }
 
 function sweepLines() {
@@ -917,37 +997,42 @@ function startAnimationLoop() {
 }
 
 function drawBoard() {
-  const { width, height, cell, x: ox, y: oy } = boardMetrics;
+  const { width, height, cell, x: ox, y: oy, ratio } = boardMetrics;
+  gameCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  gameCtx.globalAlpha = 1;
+  gameCtx.globalCompositeOperation = "source-over";
   gameCtx.clearRect(0, 0, width, height);
 
   const station = STATIONS[levelIndex];
   const background = gameCtx.createLinearGradient(0, 0, 0, height);
-  background.addColorStop(0, "#153943");
-  background.addColorStop(1, "#0e252d");
+  background.addColorStop(0, "rgba(76, 84, 87, 0.48)");
+  background.addColorStop(1, "rgba(37, 44, 47, 0.58)");
   gameCtx.fillStyle = background;
   roundRect(gameCtx, 0, 0, width, height, 8);
   gameCtx.fill();
 
   gameCtx.save();
-  gameCtx.translate(ox, oy);
+  try {
+    gameCtx.translate(ox, oy);
 
-  gameCtx.fillStyle = "rgba(255, 255, 255, 0.05)";
-  for (let y = 0; y < ROWS; y += 1) {
-    for (let x = 0; x < COLS; x += 1) {
-      roundRect(gameCtx, x * cell + 1, y * cell + 1, cell - 2, cell - 2, Math.max(2, cell * 0.12));
-      gameCtx.fill();
+    gameCtx.fillStyle = "rgba(255, 255, 255, 0.05)";
+    for (let y = 0; y < ROWS; y += 1) {
+      for (let x = 0; x < COLS; x += 1) {
+        roundRect(gameCtx, x * cell + 1, y * cell + 1, cell - 2, cell - 2, Math.max(2, cell * 0.12));
+        gameCtx.fill();
+      }
     }
+
+    drawMatrix(board, 0, 0, 1);
+
+    if (player) {
+      drawMatrix(player.matrix, player.x, player.y, 1, player.type, player.themeIndex, player.decorated);
+    }
+
+    drawSparks(gameCtx, cell);
+  } finally {
+    gameCtx.restore();
   }
-
-  drawMatrix(board, 0, 0, 1);
-
-  if (player) {
-    drawMatrix(player.matrix, player.x, player.y, 1, player.type, player.themeIndex);
-  }
-
-  drawClearBursts(gameCtx, cell);
-  drawSparks(gameCtx, cell);
-  gameCtx.restore();
 
   gameCtx.save();
   gameCtx.globalAlpha = 0.16;
@@ -962,7 +1047,15 @@ function drawBoard() {
   gameCtx.restore();
 }
 
-function drawMatrix(matrix, offsetX, offsetY, alpha, forcedType = null, forcedThemeIndex = null) {
+function drawMatrix(
+  matrix,
+  offsetX,
+  offsetY,
+  alpha,
+  forcedType = null,
+  forcedThemeIndex = null,
+  forcedDecorated = null
+) {
   const { cell } = boardMetrics;
   for (let y = 0; y < matrix.length; y += 1) {
     for (let x = 0; x < matrix[y].length; x += 1) {
@@ -970,10 +1063,11 @@ function drawMatrix(matrix, offsetX, offsetY, alpha, forcedType = null, forcedTh
       if (!cellValue) continue;
       const type = forcedType || getCellType(cellValue);
       const themeIndex = forcedThemeIndex ?? getCellThemeIndex(cellValue);
+      const decorated = forcedDecorated ?? getCellDecorated(cellValue);
       const drawX = (offsetX + x) * cell;
       const drawY = (offsetY + y) * cell;
       if (offsetY + y < 0) continue;
-      drawBlock(gameCtx, drawX, drawY, cell, type, alpha, themeIndex);
+      drawBlock(gameCtx, drawX, drawY, cell, type, alpha, themeIndex, decorated);
     }
   }
 }
@@ -987,7 +1081,12 @@ function getGhostY() {
   return ghostY;
 }
 
-function drawBlock(ctx, x, y, size, type, alpha = 1, themeIndex = levelIndex) {
+function drawBlock(ctx, x, y, size, type, alpha = 1, themeIndex = levelIndex, decorated = false) {
+  if (!decorated) {
+    drawDefaultBlock(ctx, x, y, size, type, alpha);
+    return;
+  }
+
   const mode = STATIONS[themeIndex]?.mode;
   if (mode === "meadow") {
     drawMeadowBlock(ctx, x, y, size, type, alpha);
@@ -1013,39 +1112,59 @@ function drawBlock(ctx, x, y, size, type, alpha = 1, themeIndex = levelIndex) {
     drawMountainBlock(ctx, x, y, size, type, alpha);
     return;
   }
+  if (mode === "snowyForest") {
+    drawSnowyForestBlock(ctx, x, y, size, type, alpha);
+    return;
+  }
+  if (mode === "nightCity") {
+    drawNightCityBlock(ctx, x, y, size, type, alpha);
+    return;
+  }
+  if (mode === "aurora") {
+    drawAuroraBlock(ctx, x, y, size, type, alpha);
+    return;
+  }
+  if (mode === "space") {
+    drawSpaceBlock(ctx, x, y, size, type, alpha);
+    return;
+  }
 
   drawDefaultBlock(ctx, x, y, size, type, alpha);
 }
 
 function drawDefaultBlock(ctx, x, y, size, type, alpha = 1) {
-  const piece = PIECES[type];
+  const piece = PIECES[type] || PIECES.O;
   const inset = Math.max(1.5, size * 0.08);
   const radius = Math.max(4, size * 0.18);
   ctx.save();
-  ctx.globalAlpha = alpha;
+  try {
+    ctx.globalAlpha = alpha;
 
-  const gradient = ctx.createLinearGradient(x, y, x + size, y + size);
-  gradient.addColorStop(0, lighten(piece.color, 0.2));
-  gradient.addColorStop(0.58, piece.color);
-  gradient.addColorStop(1, piece.dark);
+    const gradient = ctx.createLinearGradient(x, y, x + size, y + size);
+    gradient.addColorStop(0, "#ffe1e5");
+    gradient.addColorStop(0.24, "#ff9ca8");
+    gradient.addColorStop(0.62, piece.color);
+    gradient.addColorStop(1, piece.dark);
 
-  ctx.fillStyle = "rgba(0, 0, 0, 0.18)";
-  roundRect(ctx, x + inset * 1.4, y + inset * 1.6, size - inset * 1.8, size - inset * 1.5, radius);
-  ctx.fill();
+    ctx.fillStyle = "rgba(0, 0, 0, 0.18)";
+    roundRect(ctx, x + inset * 1.4, y + inset * 1.6, size - inset * 1.8, size - inset * 1.5, radius);
+    ctx.fill();
 
-  ctx.fillStyle = gradient;
-  roundRect(ctx, x + inset, y + inset, size - inset * 2, size - inset * 2, radius);
-  ctx.fill();
+    ctx.fillStyle = gradient;
+    roundRect(ctx, x + inset, y + inset, size - inset * 2, size - inset * 2, radius);
+    ctx.fill();
 
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.52)";
-  ctx.lineWidth = Math.max(1, size * 0.045);
-  roundRect(ctx, x + inset * 1.35, y + inset * 1.35, size - inset * 2.7, size - inset * 2.7, radius * 0.8);
-  ctx.stroke();
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.52)";
+    ctx.lineWidth = Math.max(1, size * 0.045);
+    roundRect(ctx, x + inset * 1.35, y + inset * 1.35, size - inset * 2.7, size - inset * 2.7, radius * 0.8);
+    ctx.stroke();
 
-  ctx.fillStyle = "rgba(255, 255, 255, 0.24)";
-  roundRect(ctx, x + size * 0.2, y + size * 0.17, size * 0.38, size * 0.12, radius * 0.45);
-  ctx.fill();
-  ctx.restore();
+    ctx.fillStyle = "rgba(255, 255, 255, 0.24)";
+    roundRect(ctx, x + size * 0.2, y + size * 0.17, size * 0.38, size * 0.12, radius * 0.45);
+    ctx.fill();
+  } finally {
+    ctx.restore();
+  }
 }
 
 function drawMeadowBlock(ctx, x, y, size, type, alpha = 1) {
@@ -1099,7 +1218,7 @@ function drawMeadowBlock(ctx, x, y, size, type, alpha = 1) {
 }
 
 function drawForestBlock(ctx, x, y, size, type, alpha = 1) {
-  const motif = FOREST_MOTIFS[type] || "acorn";
+  const motif = FOREST_MOTIFS[type] || "amanita";
   const sprite = forestSpriteImages[motif];
   if (isImageReady(sprite)) {
     drawSpriteBlock(ctx, x, y, size, sprite, alpha, 1.3);
@@ -1121,10 +1240,11 @@ function drawVillageBlock(ctx, x, y, size, type, alpha = 1) {
 }
 
 function drawCityBlock(ctx, x, y, size, type, alpha = 1) {
-  const motif = CITY_MOTIFS[type] || "brick";
+  const motif = CITY_MOTIFS[type] || "window";
   const sprite = citySpriteImages[motif];
   if (isImageReady(sprite)) {
-    drawSpriteBlock(ctx, x, y, size, sprite, alpha, 1.3);
+    const scale = motif === "window" || motif === "traffic" ? 0.93 : 0.98;
+    drawSpriteBlock(ctx, x, y, size, sprite, alpha, scale);
     return;
   }
 
@@ -1135,7 +1255,7 @@ function drawSeaBlock(ctx, x, y, size, type, alpha = 1) {
   const motif = SEA_MOTIFS[type] || "wave";
   const sprite = seaSpriteImages[motif];
   if (isImageReady(sprite)) {
-    drawSpriteBlock(ctx, x, y, size, sprite, alpha, 1.28);
+    drawSpriteBlock(ctx, x, y, size, sprite, alpha, 1);
     return;
   }
 
@@ -1143,10 +1263,55 @@ function drawSeaBlock(ctx, x, y, size, type, alpha = 1) {
 }
 
 function drawMountainBlock(ctx, x, y, size, type, alpha = 1) {
-  const motif = MOUNTAIN_MOTIFS[type] || "rock";
+  const motif = MOUNTAIN_MOTIFS[type] || "crystal";
   const sprite = mountainSpriteImages[motif];
   if (isImageReady(sprite)) {
     drawSpriteBlock(ctx, x, y, size, sprite, alpha, 1.28);
+    return;
+  }
+
+  drawDefaultBlock(ctx, x, y, size, type, alpha);
+}
+
+function drawSnowyForestBlock(ctx, x, y, size, type, alpha = 1) {
+  const motif = SNOWY_FOREST_MOTIFS[type] || "snowflake";
+  const sprite = snowyForestSpriteImages[motif];
+  if (isImageReady(sprite)) {
+    drawSpriteBlock(ctx, x, y, size, sprite, alpha, 1);
+    return;
+  }
+
+  drawDefaultBlock(ctx, x, y, size, type, alpha);
+}
+
+function drawNightCityBlock(ctx, x, y, size, type, alpha = 1) {
+  const motif = NIGHT_CITY_MOTIFS[type] || "lightning";
+  const sprite = nightCitySpriteImages[motif];
+  if (isImageReady(sprite)) {
+    const scale = motif === "window" ? 0.94 : 1;
+    drawSpriteBlock(ctx, x, y, size, sprite, alpha, scale);
+    return;
+  }
+
+  drawDefaultBlock(ctx, x, y, size, type, alpha);
+}
+
+function drawAuroraBlock(ctx, x, y, size, type, alpha = 1) {
+  const motif = AURORA_MOTIFS[type] || "orb";
+  const sprite = auroraSpriteImages[motif];
+  if (isImageReady(sprite)) {
+    drawSpriteBlock(ctx, x, y, size, sprite, alpha, 1);
+    return;
+  }
+
+  drawDefaultBlock(ctx, x, y, size, type, alpha);
+}
+
+function drawSpaceBlock(ctx, x, y, size, type, alpha = 1) {
+  const motif = SPACE_MOTIFS[type] || "planet";
+  const sprite = spaceSpriteImages[motif];
+  if (isImageReady(sprite)) {
+    drawSpriteBlock(ctx, x, y, size, sprite, alpha, 1);
     return;
   }
 
@@ -1159,19 +1324,31 @@ function getSpriteForTheme(type, themeIndex) {
     return meadowSpriteImages[MEADOW_MOTIFS[type] || "daisy"];
   }
   if (mode === "forest") {
-    return forestSpriteImages[FOREST_MOTIFS[type] || "acorn"];
+    return forestSpriteImages[FOREST_MOTIFS[type] || "amanita"];
   }
   if (mode === "village") {
     return villageSpriteImages[VILLAGE_MOTIFS[type] || "apple"];
   }
   if (mode === "city") {
-    return citySpriteImages[CITY_MOTIFS[type] || "brick"];
+    return citySpriteImages[CITY_MOTIFS[type] || "window"];
   }
   if (mode === "sea") {
     return seaSpriteImages[SEA_MOTIFS[type] || "wave"];
   }
   if (mode === "mountains") {
-    return mountainSpriteImages[MOUNTAIN_MOTIFS[type] || "rock"];
+    return mountainSpriteImages[MOUNTAIN_MOTIFS[type] || "crystal"];
+  }
+  if (mode === "snowyForest") {
+    return snowyForestSpriteImages[SNOWY_FOREST_MOTIFS[type] || "snowflake"];
+  }
+  if (mode === "nightCity") {
+    return nightCitySpriteImages[NIGHT_CITY_MOTIFS[type] || "lightning"];
+  }
+  if (mode === "aurora") {
+    return auroraSpriteImages[AURORA_MOTIFS[type] || "orb"];
+  }
+  if (mode === "space") {
+    return spaceSpriteImages[SPACE_MOTIFS[type] || "planet"];
   }
   return null;
 }
@@ -1496,9 +1673,11 @@ function refreshNextPreview() {
 function getPreviewKey() {
   const nextTypeName = nextPiece ? nextPiece.type : "empty";
   const nextThemeIndex = nextPiece ? nextPiece.themeIndex : levelIndex;
+  const nextDecorated = nextPiece?.decorated ? "decorated" : "classic";
   return [
     nextTypeName,
     nextThemeIndex,
+    nextDecorated,
     Math.round(nextMetrics.width),
     Math.round(nextMetrics.height),
     Math.round(mobileNextMetrics.width),
@@ -1516,8 +1695,8 @@ function drawNextPreview(ctx, metrics) {
   ctx.clearRect(0, 0, width, height);
 
   const gradient = ctx.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, "rgba(255, 255, 255, 0.62)");
-  gradient.addColorStop(1, "rgba(255, 211, 77, 0.18)");
+  gradient.addColorStop(0, "rgba(112, 121, 124, 0.88)");
+  gradient.addColorStop(1, "rgba(48, 57, 60, 0.92)");
   ctx.fillStyle = gradient;
   roundRect(ctx, 0, 0, width, height, 8);
   ctx.fill();
@@ -1533,7 +1712,16 @@ function drawNextPreview(ctx, metrics) {
   for (let y = 0; y < matrix.length; y += 1) {
     for (let x = 0; x < matrix[y].length; x += 1) {
       if (matrix[y][x]) {
-        drawBlock(ctx, ox + x * cell, oy + y * cell, cell, nextPiece.type, 1, nextPiece.themeIndex);
+        drawBlock(
+          ctx,
+          ox + x * cell,
+          oy + y * cell,
+          cell,
+          nextPiece.type,
+          1,
+          nextPiece.themeIndex,
+          nextPiece.decorated
+        );
       }
     }
   }
@@ -1541,37 +1729,6 @@ function drawNextPreview(ctx, metrics) {
 
 function spawnSparks(row, stationIndex = levelIndex, rowCells = null) {
   const station = STATIONS[stationIndex] || STATIONS[levelIndex];
-  const usesObjectSprites =
-    hasObjectSpriteTheme(stationIndex) ||
-    (Array.isArray(rowCells) && rowCells.some((cell) => hasObjectSpriteTheme(getCellThemeIndex(cell, stationIndex))));
-
-  if (usesObjectSprites) {
-    clearBursts.push({
-      row,
-      stationIndex,
-      life: 860,
-      totalLife: 860,
-      blooms: createObjectClearBlooms(row, rowCells, stationIndex)
-    });
-
-    const objectColors = getThemeSparkColors(stationIndex);
-    for (let i = 0; i < 58; i += 1) {
-      sparks.push({
-        x: Math.random() * COLS,
-        y: row + Math.random() * 0.75,
-        vx: (Math.random() - 0.5) * 0.12,
-        vy: -Math.random() * 0.12 - 0.018,
-        size: Math.random() * 0.18 + 0.07,
-        color: objectColors[Math.floor(Math.random() * objectColors.length)],
-        life: 760 + Math.random() * 520,
-        angle: Math.random() * Math.PI * 2,
-        spin: (Math.random() - 0.5) * 0.018,
-        kind: Math.random() > 0.32 ? "petal" : "pollen"
-      });
-    }
-    return;
-  }
-
   const colors = [station.accent, station.glow, station.warm, "#ffffff"];
   for (let i = 0; i < 34; i += 1) {
     sparks.push({
@@ -1588,7 +1745,18 @@ function spawnSparks(row, stationIndex = levelIndex, rowCells = null) {
 
 function hasObjectSpriteTheme(themeIndex) {
   const mode = STATIONS[themeIndex]?.mode;
-  return mode === "meadow" || mode === "forest" || mode === "village" || mode === "city" || mode === "sea" || mode === "mountains";
+  return [
+    "meadow",
+    "forest",
+    "village",
+    "city",
+    "sea",
+    "mountains",
+    "snowyForest",
+    "nightCity",
+    "aurora",
+    "space"
+  ].includes(mode);
 }
 
 function getThemeSparkColors(themeIndex) {
@@ -1608,6 +1776,18 @@ function getThemeSparkColors(themeIndex) {
   if (mode === "mountains") {
     return ["#ffffff", "#78d7ff", "#5f8dff", "#d7f0ff", "#ffd34d"];
   }
+  if (mode === "snowyForest") {
+    return ["#ffffff", "#bfeeff", "#69cfff", "#ff6f61", "#77c46b"];
+  }
+  if (mode === "nightCity") {
+    return ["#ffffff", "#45f3ff", "#ffcf4f", "#a66cff", "#ff6f9f"];
+  }
+  if (mode === "aurora") {
+    return ["#ffffff", "#69ffe0", "#38cfff", "#8b72ff", "#c6fff5"];
+  }
+  if (mode === "space") {
+    return ["#ffffff", "#78f7ff", "#ff7ae6", "#ffd15c", "#8a72ff"];
+  }
   return ["#ffffff", "#fff38a", "#ffd34d", "#ff7f97", "#6ee27a"];
 }
 
@@ -1618,12 +1798,14 @@ function createObjectClearBlooms(row, rowCells, stationIndex) {
     const cell = Array.isArray(rowCells) ? rowCells[col] : null;
     const type = getCellType(cell) || fallbackTypes[col % fallbackTypes.length];
     const themeIndex = getCellThemeIndex(cell, stationIndex);
+    const decorated = getCellDecorated(cell);
     const side = col < center ? -1 : 1;
     return {
       x: col + 0.5,
       y: row + 0.5,
       type,
       themeIndex,
+      decorated,
       vx: side * (0.018 + Math.random() * 0.022) + (col - center) * 0.004,
       vy: -0.038 - Math.random() * 0.045,
       delay: col * 18 + Math.random() * 28,
@@ -1701,7 +1883,7 @@ function drawClearBursts(ctx, cell) {
       const cx = bloom.x * cell;
       const cy = bloom.y * cell;
       const size = cell * (0.62 + bloomIn * bloom.scale + fly * 0.22);
-      const sprite = getSpriteForTheme(bloom.type, bloom.themeIndex);
+      const sprite = bloom.decorated ? getSpriteForTheme(bloom.type, bloom.themeIndex) : null;
 
       ctx.save();
       ctx.globalAlpha = Math.max(0, Math.min(1, fade));
@@ -1710,7 +1892,7 @@ function drawClearBursts(ctx, cell) {
       if (isImageReady(sprite)) {
         drawCenteredSprite(ctx, sprite, size);
       } else {
-        drawBloomBurst(ctx, size, i);
+        drawDefaultBlock(ctx, -size / 2, -size / 2, size, bloom.type, fade);
       }
       ctx.restore();
     }
@@ -2162,27 +2344,29 @@ function drawRails(w, h, t) {
 }
 
 function drawTrainInterior(station, w, h, t) {
-  const pad = Math.min(w, h) * 0.025;
+  const pad = Math.min(w, h) * 0.014;
   sceneCtx.save();
   sceneCtx.fillStyle = "rgba(255, 250, 241, 0.05)";
   sceneCtx.fillRect(0, 0, w, h);
 
   const frameGradient = sceneCtx.createLinearGradient(0, 0, 0, h);
-  frameGradient.addColorStop(0, "rgba(255, 250, 241, 0.52)");
-  frameGradient.addColorStop(1, "rgba(255, 178, 88, 0.18)");
+  frameGradient.addColorStop(0, "rgba(255, 255, 255, 0.78)");
+  frameGradient.addColorStop(0.58, "rgba(235, 239, 237, 0.56)");
+  frameGradient.addColorStop(1, "rgba(153, 169, 169, 0.48)");
   sceneCtx.strokeStyle = frameGradient;
-  sceneCtx.lineWidth = Math.max(10, pad * 1.2);
-  roundRect(sceneCtx, pad, pad, w - pad * 2, h - pad * 2, 22);
+  sceneCtx.lineWidth = Math.max(4, Math.min(8, pad * 0.8));
+  roundRect(sceneCtx, pad, pad, w - pad * 2, h - pad * 2, 26);
   sceneCtx.stroke();
 
   sceneCtx.globalAlpha = 0.7;
   drawWindowReflection(w, h, t);
   sceneCtx.globalAlpha = 1;
 
-  const sillY = h * 0.94;
+  const sillY = h * 0.965;
   const sill = sceneCtx.createLinearGradient(0, sillY, 0, h);
-  sill.addColorStop(0, "rgba(255, 250, 241, 0.58)");
-  sill.addColorStop(1, "rgba(255, 211, 77, 0.26)");
+  sill.addColorStop(0, "rgba(255, 255, 255, 0.82)");
+  sill.addColorStop(0.42, "rgba(225, 231, 229, 0.74)");
+  sill.addColorStop(1, "rgba(147, 164, 164, 0.62)");
   sceneCtx.fillStyle = sill;
   sceneCtx.fillRect(0, sillY, w, h - sillY);
 
