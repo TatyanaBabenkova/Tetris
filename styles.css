@@ -275,9 +275,9 @@ button {
 
 .controls {
   display: grid;
-  grid-template-columns: repeat(5, minmax(48px, 1fr));
+  grid-template-columns: repeat(3, minmax(58px, 1fr)) minmax(54px, 0.8fr);
   gap: 8px;
-  width: min(100%, 360px);
+  width: min(100%, 380px);
 }
 
 .control-button {
@@ -295,6 +295,7 @@ button {
 }
 
 .control-button-wide {
+  margin-left: 7px;
   background: linear-gradient(180deg, var(--sun), #ffac3d);
 }
 
@@ -1153,7 +1154,7 @@ button {
   }
 
   .controls {
-    width: min(100%, 350px);
+    width: min(100%, 370px);
   }
 
   .hud {
@@ -1184,6 +1185,10 @@ button {
 
   .controls {
     gap: 6px;
+  }
+
+  .control-button-wide {
+    margin-left: 5px;
   }
 
   .control-button {
@@ -1235,8 +1240,7 @@ button {
   }
 
   .control-button-wide {
-    grid-column: 1 / -1;
-    aspect-ratio: 2 / 1;
+    margin-left: 0;
   }
 
   .hud {
