@@ -137,8 +137,8 @@ button {
 .title-lockup h1 {
   margin: 0;
   color: #102f36;
-  font-size: clamp(24px, 3vw, 36px);
-  line-height: 0.95;
+  font-size: clamp(20px, 2.4vw, 32px);
+  line-height: 1;
 }
 
 .top-actions {
@@ -527,18 +527,29 @@ button {
   position: absolute;
   z-index: 0;
   display: grid;
-  grid-template-columns: repeat(3, 18px);
-  grid-template-rows: repeat(2, 18px);
+  grid-template-columns: repeat(3, 22px);
+  grid-template-rows: repeat(2, 22px);
   gap: 5px;
   opacity: 0.82;
   pointer-events: none;
 }
 
 .start-decor span {
-  width: 18px;
-  height: 18px;
-  border-radius: 6px;
-  box-shadow: inset 0 -3px 0 rgba(22, 63, 73, 0.12), inset 0 2px 0 rgba(255, 255, 255, 0.48);
+  position: relative;
+  width: 22px;
+  height: 22px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 7px;
+  box-shadow: 0 4px 10px rgba(31, 34, 38, 0.11), inset 0 -4px 0 rgba(22, 63, 73, 0.1), inset 0 2px 0 rgba(255, 255, 255, 0.5);
+}
+
+.start-decor span::before,
+.start-decor span::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
 .start-decor-a {
@@ -548,7 +559,13 @@ button {
 }
 
 .start-decor-a span {
-  background: linear-gradient(180deg, #ff7c83, #e85b67);
+  background:
+    radial-gradient(circle at 50% 50%, #ffd34d 0 18%, transparent 20%),
+    radial-gradient(ellipse at 50% 18%, #ffffff 0 22%, transparent 24%),
+    radial-gradient(ellipse at 82% 50%, #ffffff 0 22%, transparent 24%),
+    radial-gradient(ellipse at 50% 82%, #ffffff 0 22%, transparent 24%),
+    radial-gradient(ellipse at 18% 50%, #ffffff 0 22%, transparent 24%),
+    linear-gradient(180deg, #c8f4a9, #69c85f);
 }
 
 .start-decor-a span:nth-child(1) {
@@ -578,7 +595,12 @@ button {
 }
 
 .start-decor-b span {
-  background: linear-gradient(180deg, #39d3ec, #18aeca);
+  background:
+    radial-gradient(circle at 35% 35%, #5ade72 0 28%, transparent 30%),
+    radial-gradient(circle at 65% 35%, #5ade72 0 28%, transparent 30%),
+    radial-gradient(circle at 35% 65%, #47c957 0 28%, transparent 30%),
+    radial-gradient(circle at 65% 65%, #47c957 0 28%, transparent 30%),
+    linear-gradient(180deg, #e9ffd2, #8be06f);
 }
 
 .start-decor-b span:nth-child(1) {
@@ -622,6 +644,12 @@ button {
   font-weight: 650;
   line-height: 1.02;
   letter-spacing: 0;
+}
+
+.start-panel h2 {
+  max-width: 9.6ch;
+  font-size: clamp(32px, 8vw, 48px);
+  line-height: 1.04;
 }
 
 .modal-copy {
@@ -702,16 +730,16 @@ button {
   }
 
   .start-decor {
-    grid-template-columns: repeat(3, 15px);
-    grid-template-rows: repeat(2, 15px);
+    grid-template-columns: repeat(3, 17px);
+    grid-template-rows: repeat(2, 17px);
     gap: 4px;
     opacity: 0.5;
   }
 
   .start-decor span {
-    width: 15px;
-    height: 15px;
-    border-radius: 5px;
+    width: 17px;
+    height: 17px;
+    border-radius: 6px;
   }
 
   .start-decor-a {
@@ -941,7 +969,9 @@ button {
   }
 
   .title-lockup h1 {
-    font-size: 26px;
+    max-width: 18ch;
+    font-size: 22px;
+    line-height: 1.03;
   }
 
   .play-layout {

@@ -178,6 +178,24 @@ const PIECES = {
   }
 };
 
+const MEADOW_MOTIFS = {
+  I: "clover",
+  J: "daisy",
+  L: "berry",
+  O: "honey",
+  S: "leaf",
+  T: "daisy",
+  Z: "berry"
+};
+
+const MEADOW_SPRITES = {
+  daisy: "assets/meadow-daisy.png",
+  berry: "assets/meadow-strawberry.png",
+  clover: "assets/meadow-clover.png",
+  leaf: "assets/meadow-leaf.png",
+  honey: "assets/meadow-honeycomb.png"
+};
+
 const sceneCanvas = document.getElementById("sceneCanvas");
 const sceneCtx = sceneCanvas.getContext("2d");
 const gameCanvas = document.getElementById("gameCanvas");
@@ -234,6 +252,7 @@ let nextMetrics = { width: 120, height: 120 };
 let mobileNextMetrics = { width: 120, height: 80 };
 let sceneMetrics = { width: window.innerWidth, height: window.innerHeight };
 let sparks = [];
+let clearBursts = [];
 let toastTimer = 0;
 let assetWarningShown = false;
 const missingAssets = new Set();
@@ -251,6 +270,9 @@ let newRecordThisGame = false;
 const sceneImages = {
   levels: STATIONS.map((station) => loadSceneImage(station.image))
 };
+const meadowSpriteImages = Object.fromEntries(
+  Object.entries(MEADOW_SPRITES).map(([key, src]) => [key, loadSpriteImage(src)])
+);
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => Array(COLS).fill(null));
@@ -268,6 +290,19 @@ function loadSceneImage(src) {
     missingAssets.add(src);
     image.failed = true;
     showMissingAssetWarning();
+  });
+  return image;
+}
+
+function loadSpriteImage(src) {
+  const image = new Image();
+  image.decoding = "async";
+  image.src = src;
+  image.addEventListener("load", () => {
+    drawNext();
+  });
+  image.addEventListener("error", () => {
+    image.failed = true;
   });
   return image;
 }
@@ -451,6 +486,7 @@ function newGame() {
   board = createBoard();
   bag = [];
   sparks = [];
+  clearBursts = [];
   score = 0;
   lines = 0;
   levelIndex = 0;
@@ -630,7 +666,7 @@ function sweepLines() {
     levelIndex = Math.min(STATIONS.length - 1, Math.floor(lines / LINES_PER_STATION));
     dropInterval = getDropInterval();
     for (const row of clearedRows) {
-      spawnSparks(row);
+      spawnSparks(row, oldLevel);
     }
     if (levelIndex !== oldLevel) {
       setTheme();
@@ -691,6 +727,7 @@ function drawFrame(time = 0) {
   }
 
   drawScene(sceneClock);
+  updateClearBursts(delta);
   updateSparks(delta);
 
   if (running && !paused && !gameOver) {
@@ -706,7 +743,7 @@ function drawFrame(time = 0) {
 }
 
 function reportRenderError(error) {
-  console.error("Tetris render error:", error);
+  console.error("Block puzzle render error:", error);
   if (!renderErrorShown) {
     renderErrorShown = true;
     showToast("Перезагрузите страницу");
@@ -762,6 +799,7 @@ function drawBoard() {
     drawMatrix(player.matrix, player.x, player.y, 1, player.type);
   }
 
+  drawClearBursts(gameCtx, cell);
   drawSparks(gameCtx, cell);
   gameCtx.restore();
 
@@ -802,6 +840,11 @@ function getGhostY() {
 }
 
 function drawBlock(ctx, x, y, size, type, alpha = 1) {
+  if (STATIONS[levelIndex]?.mode === "meadow") {
+    drawMeadowBlock(ctx, x, y, size, type, alpha);
+    return;
+  }
+
   const piece = PIECES[type];
   const inset = Math.max(1.5, size * 0.08);
   const radius = Math.max(4, size * 0.18);
@@ -830,6 +873,263 @@ function drawBlock(ctx, x, y, size, type, alpha = 1) {
   roundRect(ctx, x + size * 0.2, y + size * 0.17, size * 0.38, size * 0.12, radius * 0.45);
   ctx.fill();
   ctx.restore();
+}
+
+function drawMeadowBlock(ctx, x, y, size, type, alpha = 1) {
+  const motif = MEADOW_MOTIFS[type] || "daisy";
+  const sprite = meadowSpriteImages[motif];
+  if (isImageReady(sprite)) {
+    drawMeadowSprite(ctx, x, y, size, sprite, alpha);
+    return;
+  }
+
+  const col = Math.round(x / Math.max(1, size));
+  const row = Math.round(y / Math.max(1, size));
+  const drift = ((col * 17 + row * 11 + type.charCodeAt(0)) % 7) - 3;
+  const cx = x + size / 2 + drift * size * 0.014;
+  const cy = y + size / 2 + ((col * 5 + row * 13) % 5 - 2) * size * 0.012;
+  const objectSize =
+    motif === "daisy" ? size * 1.24 :
+    motif === "clover" ? size * 1.18 :
+    motif === "berry" ? size * 1.15 :
+    motif === "honey" ? size * 1.08 :
+    size * 1.22;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  const shadow = ctx.createRadialGradient(cx, cy + size * 0.34, size * 0.04, cx, cy + size * 0.34, size * 0.48);
+  shadow.addColorStop(0, "rgba(0, 0, 0, 0.25)");
+  shadow.addColorStop(1, "rgba(0, 0, 0, 0)");
+  ctx.fillStyle = shadow;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + size * 0.32, size * 0.45, size * 0.2, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.shadowColor = "rgba(0, 0, 0, 0.24)";
+  ctx.shadowBlur = Math.max(3, size * 0.12);
+  ctx.shadowOffsetY = size * 0.055;
+
+  if (motif === "daisy") {
+    drawDaisyTile(ctx, cx, cy, objectSize);
+  } else if (motif === "clover") {
+    drawCloverTile(ctx, cx, cy, objectSize);
+  } else if (motif === "berry") {
+    drawBerryTile(ctx, cx, cy, objectSize);
+  } else if (motif === "honey") {
+    drawHoneyTile(ctx, cx, cy, objectSize);
+  } else {
+    drawLeafTile(ctx, cx, cy, objectSize);
+  }
+
+  ctx.restore();
+}
+
+function drawMeadowSprite(ctx, x, y, size, sprite, alpha = 1) {
+  const maxDimension = size * 1.15;
+  const ratio = sprite.naturalWidth / Math.max(1, sprite.naturalHeight);
+  const drawWidth = ratio >= 1 ? maxDimension : maxDimension * ratio;
+  const drawHeight = ratio >= 1 ? maxDimension / ratio : maxDimension;
+  const dx = x + (size - drawWidth) / 2;
+  const dy = y + (size - drawHeight) / 2;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+
+  const cx = x + size / 2;
+  const shadow = ctx.createRadialGradient(cx, y + size * 0.72, size * 0.05, cx, y + size * 0.72, size * 0.5);
+  shadow.addColorStop(0, "rgba(0, 0, 0, 0.28)");
+  shadow.addColorStop(1, "rgba(0, 0, 0, 0)");
+  ctx.fillStyle = shadow;
+  ctx.beginPath();
+  ctx.ellipse(cx, y + size * 0.72, size * 0.44, size * 0.17, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.drawImage(sprite, dx, dy, drawWidth, drawHeight);
+  ctx.restore();
+}
+
+function getMeadowTilePalette(motif) {
+  const palettes = {
+    daisy: { light: "#f9ffd7", base: "#95e56d", dark: "#3baa55" },
+    clover: { light: "#d7ffc5", base: "#62dd72", dark: "#25934c" },
+    berry: { light: "#ffc1c8", base: "#ff6575", dark: "#b52d45" },
+    honey: { light: "#fff3a0", base: "#ffd34d", dark: "#cf8d16" },
+    leaf: { light: "#d6ffb5", base: "#78db66", dark: "#288c46" }
+  };
+  return palettes[motif] || palettes.daisy;
+}
+
+function drawDaisyTile(ctx, cx, cy, size) {
+  ctx.save();
+  const leafBase = ctx.createRadialGradient(cx - size * 0.1, cy, 1, cx, cy + size * 0.08, size * 0.46);
+  leafBase.addColorStop(0, "#a8f783");
+  leafBase.addColorStop(1, "#3caf58");
+  ctx.fillStyle = leafBase;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + size * 0.13, size * 0.36, size * 0.22, -0.08, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#ffffff";
+  for (let i = 0; i < 8; i += 1) {
+    const angle = (Math.PI * 2 * i) / 8;
+    ctx.save();
+    ctx.translate(cx + Math.cos(angle) * size * 0.2, cy + Math.sin(angle) * size * 0.2);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size * 0.13, size * 0.24, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  ctx.strokeStyle = "rgba(225, 239, 223, 0.95)";
+  ctx.lineWidth = Math.max(1, size * 0.025);
+  for (let i = 0; i < 8; i += 1) {
+    const angle = (Math.PI * 2 * i) / 8;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(angle) * size * 0.16, cy + Math.sin(angle) * size * 0.16);
+    ctx.lineTo(cx + Math.cos(angle) * size * 0.34, cy + Math.sin(angle) * size * 0.34);
+    ctx.stroke();
+  }
+
+  const center = ctx.createRadialGradient(cx - size * 0.04, cy - size * 0.05, 1, cx, cy, size * 0.2);
+  center.addColorStop(0, "#fff38a");
+  center.addColorStop(1, "#f6b622");
+  ctx.fillStyle = center;
+  ctx.beginPath();
+  ctx.arc(cx, cy, size * 0.16, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "rgba(72, 143, 64, 0.34)";
+  ctx.lineWidth = Math.max(1, size * 0.04);
+  ctx.beginPath();
+  ctx.arc(cx, cy, size * 0.39, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawCloverTile(ctx, cx, cy, size) {
+  ctx.save();
+  const leaf = ctx.createRadialGradient(cx - size * 0.08, cy - size * 0.12, 1, cx, cy, size * 0.46);
+  leaf.addColorStop(0, "#8cf17a");
+  leaf.addColorStop(1, "#2eaa4d");
+  ctx.fillStyle = leaf;
+  const offsets = [
+    [-0.15, -0.17],
+    [0.15, -0.17],
+    [-0.15, 0.1],
+    [0.15, 0.1]
+  ];
+  for (const [ox, oy] of offsets) {
+    ctx.beginPath();
+    ctx.ellipse(cx + size * ox, cy + size * oy, size * 0.21, size * 0.23, Math.PI / 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.strokeStyle = "#227a3f";
+  ctx.lineWidth = Math.max(1, size * 0.045);
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + size * 0.08);
+  ctx.quadraticCurveTo(cx - size * 0.04, cy + size * 0.28, cx - size * 0.18, cy + size * 0.36);
+  ctx.stroke();
+  ctx.fillStyle = "rgba(255, 255, 255, 0.28)";
+  ctx.beginPath();
+  ctx.arc(cx - size * 0.13, cy - size * 0.22, size * 0.06, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawBerryTile(ctx, cx, cy, size) {
+  ctx.save();
+  const berry = ctx.createRadialGradient(cx - size * 0.11, cy - size * 0.18, 1, cx, cy, size * 0.48);
+  berry.addColorStop(0, "#ff91a0");
+  berry.addColorStop(0.55, "#ff4f69");
+  berry.addColorStop(1, "#c51d38");
+  ctx.fillStyle = berry;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + size * 0.34);
+  ctx.bezierCurveTo(cx - size * 0.37, cy + size * 0.08, cx - size * 0.28, cy - size * 0.34, cx, cy - size * 0.25);
+  ctx.bezierCurveTo(cx + size * 0.28, cy - size * 0.34, cx + size * 0.37, cy + size * 0.08, cx, cy + size * 0.34);
+  ctx.fill();
+
+  ctx.fillStyle = "#3ab45d";
+  for (let i = -1; i <= 1; i += 1) {
+    ctx.save();
+    ctx.translate(cx + i * size * 0.08, cy - size * 0.27);
+    ctx.rotate(i * 0.48);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size * 0.08, size * 0.17, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  ctx.fillStyle = "rgba(255, 244, 171, 0.95)";
+  for (let i = 0; i < 5; i += 1) {
+    const sx = cx + ((i % 2) * 2 - 1) * size * (0.08 + i * 0.012);
+    const sy = cy - size * 0.08 + i * size * 0.075;
+    ctx.beginPath();
+    ctx.ellipse(sx, sy, size * 0.024, size * 0.04, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawHoneyTile(ctx, cx, cy, size) {
+  ctx.save();
+  const honey = ctx.createLinearGradient(cx - size * 0.32, cy - size * 0.36, cx + size * 0.34, cy + size * 0.36);
+  honey.addColorStop(0, "#fff08a");
+  honey.addColorStop(0.55, "#ffc541");
+  honey.addColorStop(1, "#d78913");
+  ctx.fillStyle = honey;
+  drawHexagon(ctx, cx, cy, size * 0.36);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(143, 92, 11, 0.42)";
+  ctx.lineWidth = Math.max(1, size * 0.045);
+  drawHexagon(ctx, cx, cy, size * 0.36);
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.48)";
+  drawHexagon(ctx, cx - size * 0.05, cy - size * 0.04, size * 0.2);
+  ctx.stroke();
+  ctx.fillStyle = "rgba(255, 255, 255, 0.32)";
+  ctx.beginPath();
+  ctx.ellipse(cx - size * 0.1, cy - size * 0.12, size * 0.13, size * 0.06, -0.35, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawLeafTile(ctx, cx, cy, size) {
+  ctx.save();
+  const leaf = ctx.createLinearGradient(cx - size * 0.35, cy - size * 0.32, cx + size * 0.28, cy + size * 0.34);
+  leaf.addColorStop(0, "#b8fa88");
+  leaf.addColorStop(1, "#3bb65d");
+  ctx.fillStyle = leaf;
+  ctx.beginPath();
+  ctx.moveTo(cx - size * 0.36, cy + size * 0.12);
+  ctx.quadraticCurveTo(cx - size * 0.04, cy - size * 0.42, cx + size * 0.38, cy - size * 0.08);
+  ctx.quadraticCurveTo(cx + size * 0.03, cy + size * 0.42, cx - size * 0.36, cy + size * 0.12);
+  ctx.fill();
+  ctx.strokeStyle = "#2b8845";
+  ctx.lineWidth = Math.max(1, size * 0.045);
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(cx - size * 0.25, cy + size * 0.12);
+  ctx.quadraticCurveTo(cx, cy, cx + size * 0.25, cy - size * 0.1);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawHexagon(ctx, cx, cy, radius) {
+  ctx.beginPath();
+  for (let i = 0; i < 6; i += 1) {
+    const angle = Math.PI / 6 + (Math.PI * 2 * i) / 6;
+    const x = cx + Math.cos(angle) * radius;
+    const y = cy + Math.sin(angle) * radius;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
 }
 
 function drawIcon(ctx, type, cx, cy, size, color) {
@@ -986,8 +1286,34 @@ function drawNextPreview(ctx, metrics) {
   }
 }
 
-function spawnSparks(row) {
-  const station = STATIONS[levelIndex];
+function spawnSparks(row, stationIndex = levelIndex) {
+  const station = STATIONS[stationIndex];
+  if (station.mode === "meadow") {
+    clearBursts.push({
+      row,
+      stationIndex,
+      life: 520,
+      totalLife: 520
+    });
+
+    const meadowColors = ["#ffffff", "#fff38a", "#ffd34d", "#ff7f97", "#6ee27a"];
+    for (let i = 0; i < 78; i += 1) {
+      sparks.push({
+        x: Math.random() * COLS,
+        y: row + Math.random() * 0.75,
+        vx: (Math.random() - 0.5) * 0.12,
+        vy: -Math.random() * 0.12 - 0.018,
+        size: Math.random() * 0.18 + 0.07,
+        color: meadowColors[Math.floor(Math.random() * meadowColors.length)],
+        life: 760 + Math.random() * 520,
+        angle: Math.random() * Math.PI * 2,
+        spin: (Math.random() - 0.5) * 0.018,
+        kind: Math.random() > 0.32 ? "petal" : "pollen"
+      });
+    }
+    return;
+  }
+
   const colors = [station.accent, station.glow, station.warm, "#ffffff"];
   for (let i = 0; i < 34; i += 1) {
     sparks.push({
@@ -1002,6 +1328,14 @@ function spawnSparks(row) {
   }
 }
 
+function updateClearBursts(delta) {
+  const step = Math.min(delta, 32);
+  clearBursts = clearBursts.filter((burst) => {
+    burst.life -= step;
+    return burst.life > 0;
+  });
+}
+
 function updateSparks(delta) {
   const step = Math.min(delta, 32);
   sparks = sparks.filter((spark) => {
@@ -1009,26 +1343,117 @@ function updateSparks(delta) {
     spark.x += spark.vx * step;
     spark.y += spark.vy * step;
     spark.vy += 0.0009 * step;
+    if (typeof spark.angle === "number") {
+      spark.angle += (spark.spin || 0) * step;
+    }
     return spark.life > 0;
   });
+}
+
+function drawClearBursts(ctx, cell) {
+  for (const burst of clearBursts) {
+    const station = STATIONS[burst.stationIndex];
+    if (!station || station.mode !== "meadow") continue;
+
+    const age = 1 - burst.life / burst.totalLife;
+    const rowY = burst.row * cell;
+
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, 0.36 * (1 - age));
+    const glow = ctx.createLinearGradient(0, rowY, COLS * cell, rowY);
+    glow.addColorStop(0, "rgba(255, 255, 255, 0)");
+    glow.addColorStop(0.18, "rgba(255, 243, 138, 0.78)");
+    glow.addColorStop(0.52, "rgba(126, 237, 118, 0.72)");
+    glow.addColorStop(0.84, "rgba(255, 127, 151, 0.65)");
+    glow.addColorStop(1, "rgba(255, 255, 255, 0)");
+    ctx.fillStyle = glow;
+    roundRect(ctx, 0, rowY + cell * 0.12, COLS * cell, cell * 0.76, cell * 0.32);
+    ctx.fill();
+    ctx.restore();
+
+    for (let x = 0; x < COLS; x += 1) {
+      const local = Math.max(0, Math.min(1, (age - x * 0.035) / 0.58));
+      if (local <= 0 || local >= 1) continue;
+
+      const wave = Math.sin(local * Math.PI);
+      const cx = (x + 0.5) * cell;
+      const cy = (burst.row + 0.5) * cell;
+      const size = cell * (0.35 + wave * 0.58);
+
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, wave * 1.15);
+      ctx.translate(cx, cy);
+      ctx.rotate((x % 2 === 0 ? -1 : 1) * local * 0.5);
+      drawBloomBurst(ctx, size, x);
+      ctx.restore();
+    }
+  }
 }
 
 function drawSparks(ctx, cell) {
   for (const spark of sparks) {
     ctx.save();
     ctx.globalAlpha = Math.max(0, Math.min(1, spark.life / 700));
-    ctx.fillStyle = spark.color;
-    roundRect(
-      ctx,
-      spark.x * cell,
-      spark.y * cell,
-      Math.max(2, spark.size * cell),
-      Math.max(2, spark.size * cell),
-      2
-    );
+    if (spark.kind === "petal" || spark.kind === "pollen") {
+      drawMeadowSpark(ctx, spark, cell);
+    } else {
+      ctx.fillStyle = spark.color;
+      roundRect(
+        ctx,
+        spark.x * cell,
+        spark.y * cell,
+        Math.max(2, spark.size * cell),
+        Math.max(2, spark.size * cell),
+        2
+      );
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+function drawBloomBurst(ctx, size, index) {
+  const colors = ["#ffffff", "#fff3a0", "#ff8fa1", "#88ee78"];
+  const petal = colors[index % colors.length];
+
+  ctx.fillStyle = "rgba(255, 243, 138, 0.28)";
+  ctx.beginPath();
+  ctx.arc(0, 0, size * 0.58, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = petal;
+  for (let i = 0; i < 8; i += 1) {
+    const angle = (Math.PI * 2 * i) / 8;
+    ctx.save();
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.ellipse(0, -size * 0.24, size * 0.13, size * 0.28, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
+
+  ctx.fillStyle = "#ffd34d";
+  ctx.beginPath();
+  ctx.arc(0, 0, size * 0.16, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawMeadowSpark(ctx, spark, cell) {
+  const px = spark.x * cell;
+  const py = spark.y * cell;
+  const size = Math.max(2, spark.size * cell);
+  ctx.translate(px, py);
+  ctx.rotate(spark.angle || 0);
+  ctx.fillStyle = spark.color;
+  if (spark.kind === "pollen") {
+    ctx.beginPath();
+    ctx.arc(0, 0, size * 0.42, 0, Math.PI * 2);
+    ctx.fill();
+    return;
+  }
+  ctx.beginPath();
+  ctx.ellipse(0, 0, size * 0.36, size * 0.88, 0, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 function drawScene(time) {

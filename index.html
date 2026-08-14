@@ -8,20 +8,20 @@
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
     >
     <meta name="theme-color" content="#13b9a4">
-    <meta name="description" content="Локальная веб-игра Тетрис для ИРС Попутчик.">
-    <title>Тетрис - Попутчик</title>
-    <link rel="stylesheet" href="styles.css?v=20260814-fix8">
+    <meta name="description" content="Локальная веб-игра Блок-пазл в дорогу для ИРС Попутчик.">
+    <title>Блок-пазл в дорогу - Попутчик</title>
+    <link rel="stylesheet" href="styles.css?v=20260814-fix12">
   </head>
   <body>
     <canvas id="sceneCanvas" class="scene-canvas" aria-hidden="true"></canvas>
 
-    <main class="app-shell" aria-label="Тетрис">
+    <main class="app-shell" aria-label="Блок-пазл в дорогу">
       <header class="top-bar">
         <div class="title-lockup">
-          <div class="title-mark" aria-hidden="true">T</div>
+          <div class="title-mark" aria-hidden="true">Б</div>
           <div>
             <p>ИРС Попутчик</p>
-            <h1>Тетрис</h1>
+            <h1>Блок-пазл в дорогу</h1>
           </div>
         </div>
 
@@ -125,10 +125,10 @@
           <span></span>
         </div>
         <div class="modal-brand" aria-hidden="true">
-          <span class="brand-mark">Т</span>
+          <span class="brand-mark">Б</span>
           <span>Игра в дороге</span>
         </div>
-        <h2 id="startTitle">Тетрис</h2>
+        <h2 id="startTitle">Блок-пазл в дорогу</h2>
         <p class="modal-copy">Собирайте линии и открывайте новые уровни.</p>
         <p class="modal-hint">Вид за окном можно остановить касанием по фону и снова запустить таким же касанием.</p>
         <button id="startButton" class="primary-button" type="button">Играть</button>
@@ -159,6 +159,6 @@
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-    <script src="game.js?v=20260814-fix8" defer></script>
+    <script src="game.js?v=20260814-fix12" defer></script>
   </body>
 </html>
