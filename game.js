@@ -2,7 +2,8 @@
 
 const COLS = 10;
 const ROWS = 20;
-const LINES_PER_STATION = 8;
+const LINES_PER_STATION = 3;
+const SPRITE_SIZE_BOOST = 1.1;
 const STORAGE_KEYS = {
   record: "poputchik-tetris-record",
   sound: "poputchik-tetris-sound",
@@ -196,6 +197,96 @@ const MEADOW_SPRITES = {
   honey: "assets/meadow-honeycomb.png"
 };
 
+const FOREST_MOTIFS = {
+  I: "pinecone",
+  J: "amanita",
+  L: "boletus",
+  O: "acorn",
+  S: "leaf",
+  T: "acorn",
+  Z: "boletus"
+};
+
+const FOREST_SPRITES = {
+  amanita: "assets/forest-amanita.png",
+  boletus: "assets/forest-boletus.png",
+  acorn: "assets/forest-acorn.png",
+  leaf: "assets/forest-birch-leaf.png",
+  pinecone: "assets/forest-pinecone.png"
+};
+
+const VILLAGE_MOTIFS = {
+  I: "plank",
+  J: "apple",
+  L: "drop",
+  O: "lily",
+  S: "sunflower",
+  T: "sunflower",
+  Z: "apple"
+};
+
+const VILLAGE_SPRITES = {
+  apple: "assets/village-apple.png",
+  sunflower: "assets/village-sunflower.png",
+  lily: "assets/village-lily-pad.png",
+  plank: "assets/village-fence-plank.png",
+  drop: "assets/village-water-drop.png"
+};
+
+const CITY_MOTIFS = {
+  I: "asphalt",
+  J: "brick",
+  L: "traffic",
+  O: "window",
+  S: "concrete",
+  T: "brick",
+  Z: "window"
+};
+
+const CITY_SPRITES = {
+  brick: "assets/city-brick.png",
+  window: "assets/city-window.png",
+  concrete: "assets/city-concrete.png",
+  asphalt: "assets/city-asphalt.png",
+  traffic: "assets/city-traffic-light.png"
+};
+
+const SEA_MOTIFS = {
+  I: "anchor",
+  J: "shell",
+  L: "wave",
+  O: "pearl",
+  S: "lifebuoy",
+  T: "wave",
+  Z: "shell"
+};
+
+const SEA_SPRITES = {
+  shell: "assets/sea-shell.png",
+  pearl: "assets/sea-pearl.png",
+  wave: "assets/sea-wave.png",
+  lifebuoy: "assets/sea-lifebuoy.png",
+  anchor: "assets/sea-anchor.png"
+};
+
+const MOUNTAIN_MOTIFS = {
+  I: "crystal",
+  J: "rock",
+  L: "peak",
+  O: "compass",
+  S: "edelweiss",
+  T: "peak",
+  Z: "rock"
+};
+
+const MOUNTAIN_SPRITES = {
+  rock: "assets/mountain-rock.png",
+  crystal: "assets/mountain-crystal.png",
+  peak: "assets/mountain-peak.png",
+  edelweiss: "assets/mountain-edelweiss.png",
+  compass: "assets/mountain-compass.png"
+};
+
 const sceneCanvas = document.getElementById("sceneCanvas");
 const sceneCtx = sceneCanvas.getContext("2d");
 const gameCanvas = document.getElementById("gameCanvas");
@@ -218,9 +309,11 @@ const routeTrack = document.getElementById("routeTrack");
 const muteButton = document.getElementById("muteButton");
 const pauseButton = document.getElementById("pauseButton");
 const newGameButton = document.getElementById("newGameButton");
+const coverButton = document.getElementById("coverButton");
 const startButton = document.getElementById("startButton");
 const resumeButton = document.getElementById("resumeButton");
 const restartButton = document.getElementById("restartButton");
+const coverScreen = document.getElementById("coverScreen");
 const startScreen = document.getElementById("startScreen");
 const pauseScreen = document.getElementById("pauseScreen");
 const gameOverScreen = document.getElementById("gameOverScreen");
@@ -272,6 +365,21 @@ const sceneImages = {
 };
 const meadowSpriteImages = Object.fromEntries(
   Object.entries(MEADOW_SPRITES).map(([key, src]) => [key, loadSpriteImage(src)])
+);
+const forestSpriteImages = Object.fromEntries(
+  Object.entries(FOREST_SPRITES).map(([key, src]) => [key, loadSpriteImage(src)])
+);
+const villageSpriteImages = Object.fromEntries(
+  Object.entries(VILLAGE_SPRITES).map(([key, src]) => [key, loadSpriteImage(src)])
+);
+const citySpriteImages = Object.fromEntries(
+  Object.entries(CITY_SPRITES).map(([key, src]) => [key, loadSpriteImage(src)])
+);
+const seaSpriteImages = Object.fromEntries(
+  Object.entries(SEA_SPRITES).map(([key, src]) => [key, loadSpriteImage(src)])
+);
+const mountainSpriteImages = Object.fromEntries(
+  Object.entries(MOUNTAIN_SPRITES).map(([key, src]) => [key, loadSpriteImage(src)])
 );
 
 function createBoard() {
@@ -370,10 +478,11 @@ function cloneMatrix(matrix) {
   return matrix.map((row) => [...row]);
 }
 
-function makePiece(type) {
+function makePiece(type, themeIndex = levelIndex) {
   const matrix = cloneMatrix(PIECES[type].matrix);
   return {
     type,
+    themeIndex,
     matrix,
     x: Math.floor(COLS / 2) - Math.ceil(matrix[0].length / 2),
     y: type === "I" ? -1 : 0
@@ -501,6 +610,7 @@ function newGame() {
   newRecordThisGame = false;
   lastTime = performance.now();
   renderErrorShown = false;
+  hideModal(coverScreen);
   hideModal(startScreen);
   hideModal(pauseScreen);
   hideModal(gameOverScreen);
@@ -517,18 +627,33 @@ function startNewGameFromInput(event) {
   newGame();
 }
 
+function showStartScreenFromCover(event) {
+  if (event) event.preventDefault();
+  hideModal(coverScreen);
+  showModal(startScreen);
+}
+
 function bindStartControls() {
+  if (coverButton) {
+    coverButton.addEventListener("click", showStartScreenFromCover);
+  }
   for (const button of [startButton, restartButton, newGameButton]) {
-    button.addEventListener("click", startNewGameFromInput);
+    if (button) button.addEventListener("click", startNewGameFromInput);
   }
 }
 
 function hideModal(modal) {
+  if (!modal) return;
   modal.classList.remove("is-visible");
 }
 
 function showModal(modal) {
+  if (!modal) return;
   modal.classList.add("is-visible");
+}
+
+function isModalVisible(modal) {
+  return Boolean(modal && modal.classList.contains("is-visible"));
 }
 
 function getDropInterval() {
@@ -630,7 +755,7 @@ function lockPiece() {
         endGame();
         return;
       }
-      board[boardY][boardX] = player.type;
+      board[boardY][boardX] = createBoardCell(player.type, player.themeIndex);
     }
   }
 
@@ -642,6 +767,20 @@ function lockPiece() {
   updateHud();
 }
 
+function createBoardCell(type, themeIndex = levelIndex) {
+  return { type, themeIndex };
+}
+
+function getCellType(cell) {
+  if (!cell) return null;
+  return typeof cell === "string" ? cell : cell.type;
+}
+
+function getCellThemeIndex(cell, fallback = levelIndex) {
+  if (!cell || typeof cell === "string") return fallback;
+  return Number.isInteger(cell.themeIndex) ? cell.themeIndex : fallback;
+}
+
 function sweepLines() {
   let cleared = 0;
   const clearedRows = [];
@@ -651,9 +790,13 @@ function sweepLines() {
       if (!board[y][x]) continue outer;
     }
 
+    const cells = board[y].map((cell) => {
+      if (!cell || typeof cell === "string") return cell;
+      return { ...cell };
+    });
     board.splice(y, 1);
     board.unshift(Array(COLS).fill(null));
-    clearedRows.push(y);
+    clearedRows.push({ row: y, cells });
     cleared += 1;
     y += 1;
   }
@@ -665,8 +808,11 @@ function sweepLines() {
     lines += cleared;
     levelIndex = Math.min(STATIONS.length - 1, Math.floor(lines / LINES_PER_STATION));
     dropInterval = getDropInterval();
-    for (const row of clearedRows) {
-      spawnSparks(row, oldLevel);
+    if (levelIndex !== oldLevel && nextPiece) {
+      nextPiece.themeIndex = levelIndex;
+    }
+    for (const clearedRow of clearedRows) {
+      spawnSparks(clearedRow.row, oldLevel, clearedRow.cells);
     }
     if (levelIndex !== oldLevel) {
       setTheme();
@@ -796,7 +942,7 @@ function drawBoard() {
   drawMatrix(board, 0, 0, 1);
 
   if (player) {
-    drawMatrix(player.matrix, player.x, player.y, 1, player.type);
+    drawMatrix(player.matrix, player.x, player.y, 1, player.type, player.themeIndex);
   }
 
   drawClearBursts(gameCtx, cell);
@@ -816,16 +962,18 @@ function drawBoard() {
   gameCtx.restore();
 }
 
-function drawMatrix(matrix, offsetX, offsetY, alpha, forcedType = null) {
+function drawMatrix(matrix, offsetX, offsetY, alpha, forcedType = null, forcedThemeIndex = null) {
   const { cell } = boardMetrics;
   for (let y = 0; y < matrix.length; y += 1) {
     for (let x = 0; x < matrix[y].length; x += 1) {
-      if (!matrix[y][x]) continue;
-      const type = forcedType || matrix[y][x];
+      const cellValue = matrix[y][x];
+      if (!cellValue) continue;
+      const type = forcedType || getCellType(cellValue);
+      const themeIndex = forcedThemeIndex ?? getCellThemeIndex(cellValue);
       const drawX = (offsetX + x) * cell;
       const drawY = (offsetY + y) * cell;
       if (offsetY + y < 0) continue;
-      drawBlock(gameCtx, drawX, drawY, cell, type, alpha);
+      drawBlock(gameCtx, drawX, drawY, cell, type, alpha, themeIndex);
     }
   }
 }
@@ -839,12 +987,37 @@ function getGhostY() {
   return ghostY;
 }
 
-function drawBlock(ctx, x, y, size, type, alpha = 1) {
-  if (STATIONS[levelIndex]?.mode === "meadow") {
+function drawBlock(ctx, x, y, size, type, alpha = 1, themeIndex = levelIndex) {
+  const mode = STATIONS[themeIndex]?.mode;
+  if (mode === "meadow") {
     drawMeadowBlock(ctx, x, y, size, type, alpha);
     return;
   }
+  if (mode === "forest") {
+    drawForestBlock(ctx, x, y, size, type, alpha);
+    return;
+  }
+  if (mode === "village") {
+    drawVillageBlock(ctx, x, y, size, type, alpha);
+    return;
+  }
+  if (mode === "city") {
+    drawCityBlock(ctx, x, y, size, type, alpha);
+    return;
+  }
+  if (mode === "sea") {
+    drawSeaBlock(ctx, x, y, size, type, alpha);
+    return;
+  }
+  if (mode === "mountains") {
+    drawMountainBlock(ctx, x, y, size, type, alpha);
+    return;
+  }
 
+  drawDefaultBlock(ctx, x, y, size, type, alpha);
+}
+
+function drawDefaultBlock(ctx, x, y, size, type, alpha = 1) {
   const piece = PIECES[type];
   const inset = Math.max(1.5, size * 0.08);
   const radius = Math.max(4, size * 0.18);
@@ -879,7 +1052,7 @@ function drawMeadowBlock(ctx, x, y, size, type, alpha = 1) {
   const motif = MEADOW_MOTIFS[type] || "daisy";
   const sprite = meadowSpriteImages[motif];
   if (isImageReady(sprite)) {
-    drawMeadowSprite(ctx, x, y, size, sprite, alpha);
+    drawSpriteBlock(ctx, x, y, size, sprite, alpha, 1.3);
     return;
   }
 
@@ -925,8 +1098,86 @@ function drawMeadowBlock(ctx, x, y, size, type, alpha = 1) {
   ctx.restore();
 }
 
-function drawMeadowSprite(ctx, x, y, size, sprite, alpha = 1) {
-  const maxDimension = size * 1.15;
+function drawForestBlock(ctx, x, y, size, type, alpha = 1) {
+  const motif = FOREST_MOTIFS[type] || "acorn";
+  const sprite = forestSpriteImages[motif];
+  if (isImageReady(sprite)) {
+    drawSpriteBlock(ctx, x, y, size, sprite, alpha, 1.3);
+    return;
+  }
+
+  drawDefaultBlock(ctx, x, y, size, type, alpha);
+}
+
+function drawVillageBlock(ctx, x, y, size, type, alpha = 1) {
+  const motif = VILLAGE_MOTIFS[type] || "apple";
+  const sprite = villageSpriteImages[motif];
+  if (isImageReady(sprite)) {
+    drawSpriteBlock(ctx, x, y, size, sprite, alpha, 1.28);
+    return;
+  }
+
+  drawDefaultBlock(ctx, x, y, size, type, alpha);
+}
+
+function drawCityBlock(ctx, x, y, size, type, alpha = 1) {
+  const motif = CITY_MOTIFS[type] || "brick";
+  const sprite = citySpriteImages[motif];
+  if (isImageReady(sprite)) {
+    drawSpriteBlock(ctx, x, y, size, sprite, alpha, 1.3);
+    return;
+  }
+
+  drawDefaultBlock(ctx, x, y, size, type, alpha);
+}
+
+function drawSeaBlock(ctx, x, y, size, type, alpha = 1) {
+  const motif = SEA_MOTIFS[type] || "wave";
+  const sprite = seaSpriteImages[motif];
+  if (isImageReady(sprite)) {
+    drawSpriteBlock(ctx, x, y, size, sprite, alpha, 1.28);
+    return;
+  }
+
+  drawDefaultBlock(ctx, x, y, size, type, alpha);
+}
+
+function drawMountainBlock(ctx, x, y, size, type, alpha = 1) {
+  const motif = MOUNTAIN_MOTIFS[type] || "rock";
+  const sprite = mountainSpriteImages[motif];
+  if (isImageReady(sprite)) {
+    drawSpriteBlock(ctx, x, y, size, sprite, alpha, 1.28);
+    return;
+  }
+
+  drawDefaultBlock(ctx, x, y, size, type, alpha);
+}
+
+function getSpriteForTheme(type, themeIndex) {
+  const mode = STATIONS[themeIndex]?.mode;
+  if (mode === "meadow") {
+    return meadowSpriteImages[MEADOW_MOTIFS[type] || "daisy"];
+  }
+  if (mode === "forest") {
+    return forestSpriteImages[FOREST_MOTIFS[type] || "acorn"];
+  }
+  if (mode === "village") {
+    return villageSpriteImages[VILLAGE_MOTIFS[type] || "apple"];
+  }
+  if (mode === "city") {
+    return citySpriteImages[CITY_MOTIFS[type] || "brick"];
+  }
+  if (mode === "sea") {
+    return seaSpriteImages[SEA_MOTIFS[type] || "wave"];
+  }
+  if (mode === "mountains") {
+    return mountainSpriteImages[MOUNTAIN_MOTIFS[type] || "rock"];
+  }
+  return null;
+}
+
+function drawSpriteBlock(ctx, x, y, size, sprite, alpha = 1, scale = 1.18) {
+  const maxDimension = size * scale * SPRITE_SIZE_BOOST;
   const ratio = sprite.naturalWidth / Math.max(1, sprite.naturalHeight);
   const drawWidth = ratio >= 1 ? maxDimension : maxDimension * ratio;
   const drawHeight = ratio >= 1 ? maxDimension / ratio : maxDimension;
@@ -1244,8 +1495,10 @@ function refreshNextPreview() {
 
 function getPreviewKey() {
   const nextTypeName = nextPiece ? nextPiece.type : "empty";
+  const nextThemeIndex = nextPiece ? nextPiece.themeIndex : levelIndex;
   return [
     nextTypeName,
+    nextThemeIndex,
     Math.round(nextMetrics.width),
     Math.round(nextMetrics.height),
     Math.round(mobileNextMetrics.width),
@@ -1280,31 +1533,36 @@ function drawNextPreview(ctx, metrics) {
   for (let y = 0; y < matrix.length; y += 1) {
     for (let x = 0; x < matrix[y].length; x += 1) {
       if (matrix[y][x]) {
-        drawBlock(ctx, ox + x * cell, oy + y * cell, cell, nextPiece.type, 1);
+        drawBlock(ctx, ox + x * cell, oy + y * cell, cell, nextPiece.type, 1, nextPiece.themeIndex);
       }
     }
   }
 }
 
-function spawnSparks(row, stationIndex = levelIndex) {
-  const station = STATIONS[stationIndex];
-  if (station.mode === "meadow") {
+function spawnSparks(row, stationIndex = levelIndex, rowCells = null) {
+  const station = STATIONS[stationIndex] || STATIONS[levelIndex];
+  const usesObjectSprites =
+    hasObjectSpriteTheme(stationIndex) ||
+    (Array.isArray(rowCells) && rowCells.some((cell) => hasObjectSpriteTheme(getCellThemeIndex(cell, stationIndex))));
+
+  if (usesObjectSprites) {
     clearBursts.push({
       row,
       stationIndex,
-      life: 520,
-      totalLife: 520
+      life: 860,
+      totalLife: 860,
+      blooms: createObjectClearBlooms(row, rowCells, stationIndex)
     });
 
-    const meadowColors = ["#ffffff", "#fff38a", "#ffd34d", "#ff7f97", "#6ee27a"];
-    for (let i = 0; i < 78; i += 1) {
+    const objectColors = getThemeSparkColors(stationIndex);
+    for (let i = 0; i < 58; i += 1) {
       sparks.push({
         x: Math.random() * COLS,
         y: row + Math.random() * 0.75,
         vx: (Math.random() - 0.5) * 0.12,
         vy: -Math.random() * 0.12 - 0.018,
         size: Math.random() * 0.18 + 0.07,
-        color: meadowColors[Math.floor(Math.random() * meadowColors.length)],
+        color: objectColors[Math.floor(Math.random() * objectColors.length)],
         life: 760 + Math.random() * 520,
         angle: Math.random() * Math.PI * 2,
         spin: (Math.random() - 0.5) * 0.018,
@@ -1328,10 +1586,69 @@ function spawnSparks(row, stationIndex = levelIndex) {
   }
 }
 
+function hasObjectSpriteTheme(themeIndex) {
+  const mode = STATIONS[themeIndex]?.mode;
+  return mode === "meadow" || mode === "forest" || mode === "village" || mode === "city" || mode === "sea" || mode === "mountains";
+}
+
+function getThemeSparkColors(themeIndex) {
+  const mode = STATIONS[themeIndex]?.mode;
+  if (mode === "forest") {
+    return ["#ffd96a", "#9be36f", "#c77a2d", "#ffffff", "#ff8a54"];
+  }
+  if (mode === "village") {
+    return ["#ffffff", "#ffdd4f", "#ff5d49", "#36cfff", "#74e268"];
+  }
+  if (mode === "city") {
+    return ["#ffffff", "#34c8ff", "#ff5d49", "#ffd34d", "#9aa6b2"];
+  }
+  if (mode === "sea") {
+    return ["#ffffff", "#8eeeff", "#34c8ff", "#ff5d49", "#ffd34d"];
+  }
+  if (mode === "mountains") {
+    return ["#ffffff", "#78d7ff", "#5f8dff", "#d7f0ff", "#ffd34d"];
+  }
+  return ["#ffffff", "#fff38a", "#ffd34d", "#ff7f97", "#6ee27a"];
+}
+
+function createObjectClearBlooms(row, rowCells, stationIndex) {
+  const fallbackTypes = ["I", "J", "L", "O", "S", "T", "Z"];
+  const center = (COLS - 1) / 2;
+  return Array.from({ length: COLS }, (_, col) => {
+    const cell = Array.isArray(rowCells) ? rowCells[col] : null;
+    const type = getCellType(cell) || fallbackTypes[col % fallbackTypes.length];
+    const themeIndex = getCellThemeIndex(cell, stationIndex);
+    const side = col < center ? -1 : 1;
+    return {
+      x: col + 0.5,
+      y: row + 0.5,
+      type,
+      themeIndex,
+      vx: side * (0.018 + Math.random() * 0.022) + (col - center) * 0.004,
+      vy: -0.038 - Math.random() * 0.045,
+      delay: col * 18 + Math.random() * 28,
+      angle: (Math.random() - 0.5) * 0.45,
+      spin: (Math.random() - 0.5) * 0.018,
+      scale: 1.15 + Math.random() * 0.34
+    };
+  });
+}
+
 function updateClearBursts(delta) {
   const step = Math.min(delta, 32);
   clearBursts = clearBursts.filter((burst) => {
     burst.life -= step;
+    const elapsed = burst.totalLife - burst.life;
+    if (Array.isArray(burst.blooms)) {
+      for (const bloom of burst.blooms) {
+        if (elapsed < bloom.delay) continue;
+        const force = Math.min(1, (elapsed - bloom.delay) / 560);
+        bloom.x += bloom.vx * step * (0.34 + force * 0.95);
+        bloom.y += bloom.vy * step;
+        bloom.vy += 0.00065 * step;
+        bloom.angle += bloom.spin * step * (0.45 + force);
+      }
+    }
     return burst.life > 0;
   });
 }
@@ -1352,39 +1669,49 @@ function updateSparks(delta) {
 
 function drawClearBursts(ctx, cell) {
   for (const burst of clearBursts) {
-    const station = STATIONS[burst.stationIndex];
-    if (!station || station.mode !== "meadow") continue;
+    const station = STATIONS[burst.stationIndex] || STATIONS[levelIndex];
+    if (!station || !Array.isArray(burst.blooms)) continue;
 
-    const age = 1 - burst.life / burst.totalLife;
+    const elapsed = burst.totalLife - burst.life;
+    const age = Math.max(0, Math.min(1, elapsed / burst.totalLife));
     const rowY = burst.row * cell;
 
     ctx.save();
     ctx.globalAlpha = Math.max(0, 0.36 * (1 - age));
     const glow = ctx.createLinearGradient(0, rowY, COLS * cell, rowY);
     glow.addColorStop(0, "rgba(255, 255, 255, 0)");
-    glow.addColorStop(0.18, "rgba(255, 243, 138, 0.78)");
-    glow.addColorStop(0.52, "rgba(126, 237, 118, 0.72)");
-    glow.addColorStop(0.84, "rgba(255, 127, 151, 0.65)");
+    glow.addColorStop(0.18, withAlpha(station.glow, 0.78));
+    glow.addColorStop(0.52, withAlpha(station.accent, 0.72));
+    glow.addColorStop(0.84, withAlpha(station.warm, 0.65));
     glow.addColorStop(1, "rgba(255, 255, 255, 0)");
     ctx.fillStyle = glow;
     roundRect(ctx, 0, rowY + cell * 0.12, COLS * cell, cell * 0.76, cell * 0.32);
     ctx.fill();
     ctx.restore();
 
-    for (let x = 0; x < COLS; x += 1) {
-      const local = Math.max(0, Math.min(1, (age - x * 0.035) / 0.58));
+    const blooms = Array.isArray(burst.blooms) ? burst.blooms : [];
+    for (let i = 0; i < blooms.length; i += 1) {
+      const bloom = blooms[i];
+      const local = Math.max(0, Math.min(1, (elapsed - bloom.delay) / 620));
       if (local <= 0 || local >= 1) continue;
 
-      const wave = Math.sin(local * Math.PI);
-      const cx = (x + 0.5) * cell;
-      const cy = (burst.row + 0.5) * cell;
-      const size = cell * (0.35 + wave * 0.58);
+      const bloomIn = easeOutBack(Math.min(1, local * 2.2));
+      const fly = easeOutCubic(Math.max(0, (local - 0.24) / 0.76));
+      const fade = local < 0.7 ? 1 : 1 - (local - 0.7) / 0.3;
+      const cx = bloom.x * cell;
+      const cy = bloom.y * cell;
+      const size = cell * (0.62 + bloomIn * bloom.scale + fly * 0.22);
+      const sprite = getSpriteForTheme(bloom.type, bloom.themeIndex);
 
       ctx.save();
-      ctx.globalAlpha = Math.min(1, wave * 1.15);
+      ctx.globalAlpha = Math.max(0, Math.min(1, fade));
       ctx.translate(cx, cy);
-      ctx.rotate((x % 2 === 0 ? -1 : 1) * local * 0.5);
-      drawBloomBurst(ctx, size, x);
+      ctx.rotate(bloom.angle);
+      if (isImageReady(sprite)) {
+        drawCenteredSprite(ctx, sprite, size);
+      } else {
+        drawBloomBurst(ctx, size, i);
+      }
       ctx.restore();
     }
   }
@@ -1436,6 +1763,38 @@ function drawBloomBurst(ctx, size, index) {
   ctx.beginPath();
   ctx.arc(0, 0, size * 0.16, 0, Math.PI * 2);
   ctx.fill();
+}
+
+function drawCenteredSprite(ctx, sprite, maxDimension) {
+  const boostedDimension = maxDimension * SPRITE_SIZE_BOOST;
+  const ratio = sprite.naturalWidth / Math.max(1, sprite.naturalHeight);
+  const drawWidth = ratio >= 1 ? boostedDimension : boostedDimension * ratio;
+  const drawHeight = ratio >= 1 ? boostedDimension / ratio : boostedDimension;
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+
+  const shadow = ctx.createRadialGradient(0, boostedDimension * 0.28, boostedDimension * 0.02, 0, boostedDimension * 0.28, boostedDimension * 0.42);
+  shadow.addColorStop(0, "rgba(0, 0, 0, 0.22)");
+  shadow.addColorStop(1, "rgba(0, 0, 0, 0)");
+  ctx.fillStyle = shadow;
+  ctx.beginPath();
+  ctx.ellipse(0, boostedDimension * 0.3, boostedDimension * 0.38, boostedDimension * 0.15, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.drawImage(sprite, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+}
+
+function easeOutCubic(value) {
+  const t = Math.max(0, Math.min(1, value));
+  return 1 - Math.pow(1 - t, 3);
+}
+
+function easeOutBack(value) {
+  const t = Math.max(0, Math.min(1, value));
+  const c1 = 1.32;
+  const c3 = c1 + 1;
+  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
 }
 
 function drawMeadowSpark(ctx, spark, cell) {
@@ -1869,6 +2228,15 @@ function lighten(hex, amount) {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
+function withAlpha(hex, alpha) {
+  const value = hex.replace("#", "");
+  const number = parseInt(value, 16);
+  const r = (number >> 16) & 255;
+  const g = (number >> 8) & 255;
+  const b = number & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 function showToast(message) {
   toast.textContent = message;
   toast.classList.add("is-visible");
@@ -2156,7 +2524,11 @@ function bindControls() {
     if (event.key === "ArrowUp") rotatePlayer();
     if (event.key === " ") hardDrop();
     if (event.key.toLowerCase() === "p" || event.key === "Escape") togglePause();
-    if (event.key === "Enter" && (!running || gameOver)) newGame();
+    if (event.key === "Enter" && isModalVisible(coverScreen)) {
+      showStartScreenFromCover(event);
+      return;
+    }
+    if (event.key === "Enter" && (isModalVisible(startScreen) || !running || gameOver)) newGame();
   });
 
   resumeButton.addEventListener("click", () => togglePause(false));

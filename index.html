@@ -10,7 +10,7 @@
     <meta name="theme-color" content="#13b9a4">
     <meta name="description" content="Локальная веб-игра Блок-пазл в дорогу для ИРС Попутчик.">
     <title>Блок-пазл в дорогу - Попутчик</title>
-    <link rel="stylesheet" href="styles.css?v=20260814-fix12">
+    <link rel="stylesheet" href="styles.css?v=20260814-fix18">
   </head>
   <body>
     <canvas id="sceneCanvas" class="scene-canvas" aria-hidden="true"></canvas>
@@ -110,28 +110,41 @@
       </section>
     </main>
 
-    <div id="startScreen" class="modal is-visible" role="dialog" aria-modal="true" aria-labelledby="startTitle">
+    <div id="coverScreen" class="modal cover-modal is-visible" role="dialog" aria-modal="true" aria-labelledby="coverTitle">
+      <button id="coverButton" class="cover-panel" type="button" aria-label="Открыть старт игры">
+        <img src="assets/title-splash.png" alt="">
+        <span class="cover-vignette" aria-hidden="true"></span>
+        <span class="cover-title-card">
+          <span class="cover-kicker">Игра в дороге</span>
+          <span id="coverTitle" class="cover-title">Блок-пазл в дорогу</span>
+          <span class="cover-note">Нажмите, чтобы продолжить</span>
+        </span>
+      </button>
+    </div>
+
+    <div id="startScreen" class="modal" role="dialog" aria-modal="true" aria-labelledby="startTitle">
       <div class="modal-panel start-panel">
-        <div class="start-decor start-decor-a" aria-hidden="true">
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
+        <h2 id="startTitle" class="visually-hidden">Блок-пазл в дорогу</h2>
+        <div class="start-info">
+          <div class="modal-brand" aria-hidden="true">
+            <span>Игра в дороге</span>
+          </div>
+          <div class="start-decor start-decor-a" aria-hidden="true">
+            <span><img src="assets/meadow-daisy.png" alt=""></span>
+            <span><img src="assets/meadow-clover.png" alt=""></span>
+            <span><img src="assets/meadow-strawberry.png" alt=""></span>
+            <span><img src="assets/meadow-leaf.png" alt=""></span>
+          </div>
+          <div class="start-decor start-decor-b" aria-hidden="true">
+            <span><img src="assets/sea-shell.png" alt=""></span>
+            <span><img src="assets/sea-pearl.png" alt=""></span>
+            <span><img src="assets/sea-wave.png" alt=""></span>
+            <span><img src="assets/sea-lifebuoy.png" alt=""></span>
+          </div>
+          <p class="modal-copy">Собирайте линии и открывайте новые уровни.</p>
+          <p class="modal-hint">Вид за окном можно остановить касанием по фону и снова запустить таким же касанием.</p>
+          <button id="startButton" class="primary-button" type="button">Играть</button>
         </div>
-        <div class="start-decor start-decor-b" aria-hidden="true">
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-        <div class="modal-brand" aria-hidden="true">
-          <span class="brand-mark">Б</span>
-          <span>Игра в дороге</span>
-        </div>
-        <h2 id="startTitle">Блок-пазл в дорогу</h2>
-        <p class="modal-copy">Собирайте линии и открывайте новые уровни.</p>
-        <p class="modal-hint">Вид за окном можно остановить касанием по фону и снова запустить таким же касанием.</p>
-        <button id="startButton" class="primary-button" type="button">Играть</button>
       </div>
     </div>
 
@@ -159,6 +172,6 @@
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-    <script src="game.js?v=20260814-fix12" defer></script>
+    <script src="game.js?v=20260814-fix18" defer></script>
   </body>
 </html>

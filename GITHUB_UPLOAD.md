@@ -8,6 +8,7 @@ styles.css
 game.js
 check-assets.html
 assets/
+  title-splash.png
   level-01-summer-meadow.png
   level-02-birch-forest.png
   level-03-riverside-village.png
@@ -18,6 +19,36 @@ assets/
   level-08-night-city.png
   level-09-aurora.png
   level-10-space.png
+  meadow-clover.png
+  meadow-daisy.png
+  meadow-honeycomb.png
+  meadow-leaf.png
+  meadow-strawberry.png
+  forest-acorn.png
+  forest-amanita.png
+  forest-birch-leaf.png
+  forest-boletus.png
+  forest-pinecone.png
+  village-apple.png
+  village-fence-plank.png
+  village-lily-pad.png
+  village-sunflower.png
+  village-water-drop.png
+  city-asphalt.png
+  city-brick.png
+  city-concrete.png
+  city-traffic-light.png
+  city-window.png
+  sea-anchor.png
+  sea-lifebuoy.png
+  sea-pearl.png
+  sea-shell.png
+  sea-wave.png
+  mountain-compass.png
+  mountain-crystal.png
+  mountain-edelweiss.png
+  mountain-peak.png
+  mountain-rock.png
 ```
 
 Важно:
