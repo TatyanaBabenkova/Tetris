@@ -192,6 +192,7 @@ const recordValue = document.getElementById("recordValue");
 const stationName = document.getElementById("stationName");
 const mobileStationName = document.getElementById("mobileStationName");
 const mobileScoreValue = document.getElementById("mobileScoreValue");
+const mobileRecordValue = document.getElementById("mobileRecordValue");
 const levelValue = document.getElementById("levelValue");
 const linesValue = document.getElementById("linesValue");
 const levelProgress = document.getElementById("levelProgress");
@@ -206,6 +207,7 @@ const startScreen = document.getElementById("startScreen");
 const pauseScreen = document.getElementById("pauseScreen");
 const gameOverScreen = document.getElementById("gameOverScreen");
 const finalScore = document.getElementById("finalScore");
+const finalRecord = document.getElementById("finalRecord");
 const toast = document.getElementById("toast");
 
 const formatter = new Intl.NumberFormat("ru-RU");
@@ -245,6 +247,7 @@ let touchDropMark = 0;
 let lastPreviewKey = "";
 let animationFrameId = 0;
 let renderErrorShown = false;
+let newRecordThisGame = false;
 const sceneImages = {
   levels: STATIONS.map((station) => loadSceneImage(station.image))
 };
@@ -302,6 +305,14 @@ function writeStorage(key, value) {
   } catch {
     // Local records are optional when a browser blocks storage.
   }
+}
+
+function saveRecordIfNeeded() {
+  if (score <= record) return false;
+  record = score;
+  newRecordThisGame = true;
+  writeStorage(STORAGE_KEYS.record, record);
+  return true;
 }
 
 function shuffle(values) {
@@ -398,11 +409,13 @@ function setTheme() {
 
 function updateHud() {
   const station = STATIONS[levelIndex];
+  saveRecordIfNeeded();
   scoreValue.textContent = formatter.format(score);
-  recordValue.textContent = formatter.format(Math.max(record, score));
+  recordValue.textContent = formatter.format(record);
   stationName.textContent = `Уровень ${levelIndex + 1}: ${station.name}`;
   mobileStationName.textContent = `${levelIndex + 1} · ${station.name}`;
   mobileScoreValue.textContent = `${formatter.format(score)} очков`;
+  mobileRecordValue.textContent = `Рекорд: ${formatter.format(record)}`;
   levelValue.textContent = String(levelIndex + 1);
   linesValue.textContent = formatter.format(lines);
   const isFinalLevel = levelIndex === STATIONS.length - 1;
@@ -449,6 +462,7 @@ function newGame() {
   running = true;
   paused = false;
   gameOver = false;
+  newRecordThisGame = false;
   lastTime = performance.now();
   renderErrorShown = false;
   hideModal(startScreen);
@@ -647,10 +661,10 @@ function endGame() {
   running = false;
   gameOver = true;
   pauseButton.disabled = true;
+  saveRecordIfNeeded();
   finalScore.textContent = formatter.format(score);
-  if (score > record) {
-    record = score;
-    writeStorage(STORAGE_KEYS.record, record);
+  finalRecord.textContent = formatter.format(record);
+  if (newRecordThisGame) {
     showToast("Новый рекорд");
   }
   updateHud();
@@ -1544,6 +1558,18 @@ function canToggleSceneryFrom(target) {
   );
 }
 
+function getElementFromEventTarget(target) {
+  if (target instanceof Element) return target;
+  if (target instanceof Node) return target.parentElement;
+  return null;
+}
+
+function isGameInteractionTarget(target) {
+  const element = getElementFromEventTarget(target);
+  if (!element) return false;
+  return Boolean(element.closest(".app-shell, .modal, .toast") || element === sceneCanvas);
+}
+
 function handleAction(action) {
   resumeAudio();
   if (action === "left") movePlayer(-1);
@@ -1554,6 +1580,32 @@ function handleAction(action) {
 }
 
 function bindControls() {
+  document.addEventListener("contextmenu", (event) => {
+    if (isGameInteractionTarget(event.target)) {
+      event.preventDefault();
+    }
+  });
+
+  document.addEventListener("selectstart", (event) => {
+    if (isGameInteractionTarget(event.target)) {
+      event.preventDefault();
+    }
+  });
+
+  document.addEventListener("dragstart", (event) => {
+    if (isGameInteractionTarget(event.target)) {
+      event.preventDefault();
+    }
+  });
+
+  document.addEventListener("selectionchange", () => {
+    const selection = window.getSelection?.();
+    if (!selection || selection.isCollapsed) return;
+    if (isGameInteractionTarget(selection.anchorNode) || isGameInteractionTarget(selection.focusNode)) {
+      selection.removeAllRanges();
+    }
+  });
+
   document.querySelectorAll("[data-action]").forEach((button) => {
     const action = button.dataset.action;
     button.addEventListener("pointerdown", (event) => {
