@@ -1,7 +1,7 @@
 "use strict";
 
 const COLS = 10;
-const ROWS = 20;
+const ROWS = 21;
 const LINES_PER_STATION = 8;
 const SPRITE_SIZE_BOOST = 1;
 const SPRITE_ASSET_VERSION = "20260814-art3";
@@ -239,9 +239,9 @@ const CITY_MOTIFS = {
 };
 
 const CITY_SPRITES = {
-  window: "assets/city-window.png",
+  window: "assets/city-window.png?v=20260815-art1",
   concrete: "assets/city-concrete.png",
-  traffic: "assets/city-traffic-light.png"
+  traffic: "assets/city-traffic-light.png?v=20260815-art1"
 };
 
 const SEA_MOTIFS = {
@@ -257,7 +257,7 @@ const SEA_MOTIFS = {
 const SEA_SPRITES = {
   wave: "assets/sea-wave.png",
   lifebuoy: "assets/sea-lifebuoy.png",
-  anchor: "assets/sea-anchor.png"
+  anchor: "assets/sea-anchor.png?v=20260815-art1"
 };
 
 const MOUNTAIN_MOTIFS = {
@@ -1243,7 +1243,7 @@ function drawCityBlock(ctx, x, y, size, type, alpha = 1) {
   const motif = CITY_MOTIFS[type] || "window";
   const sprite = citySpriteImages[motif];
   if (isImageReady(sprite)) {
-    const scale = motif === "window" || motif === "traffic" ? 0.93 : 0.98;
+    const scale = motif === "window" || motif === "traffic" ? 1.02 : 0.98;
     drawSpriteBlock(ctx, x, y, size, sprite, alpha, scale);
     return;
   }
@@ -1255,7 +1255,7 @@ function drawSeaBlock(ctx, x, y, size, type, alpha = 1) {
   const motif = SEA_MOTIFS[type] || "wave";
   const sprite = seaSpriteImages[motif];
   if (isImageReady(sprite)) {
-    drawSpriteBlock(ctx, x, y, size, sprite, alpha, 1);
+    drawSpriteBlock(ctx, x, y, size, sprite, alpha, motif === "anchor" ? 1.04 : 1);
     return;
   }
 

@@ -243,7 +243,7 @@ button {
   width: min(34vw, 360px, calc((100svh - 205px) / 2));
   min-width: min(238px, 86vw);
   max-width: 360px;
-  aspect-ratio: 10 / 20;
+  aspect-ratio: 10 / 21;
   padding: clamp(7px, 1.3vw, 10px);
   border: 3px solid rgba(255, 255, 255, 0.84);
   border-radius: 8px;
@@ -276,6 +276,7 @@ button {
 .controls {
   display: grid;
   grid-template-columns: repeat(3, minmax(58px, 1fr)) minmax(54px, 0.8fr);
+  align-items: stretch;
   gap: 8px;
   width: min(100%, 380px);
 }
@@ -283,7 +284,7 @@ button {
 .control-button {
   display: grid;
   min-width: 0;
-  aspect-ratio: 1;
+  height: 64px;
   place-items: center;
   border-radius: 8px;
   background: linear-gradient(180deg, #ffffff, #f4f8f6);
@@ -1115,7 +1116,7 @@ button {
   }
 
   .board-frame {
-    width: min(84vw, 350px, calc((var(--app-height) - 252px) / 2));
+    width: min(84vw, 350px, calc((var(--app-height) - 226px) / 2.1));
     min-width: min(220px, 86vw);
   }
 
@@ -1130,7 +1131,7 @@ button {
   }
 
   .control-button {
-    min-height: 58px;
+    min-height: 64px;
     font-size: clamp(26px, 8vw, 34px);
     touch-action: manipulation;
   }
@@ -1192,7 +1193,8 @@ button {
   }
 
   .control-button {
-    min-height: 54px;
+    height: 60px;
+    min-height: 60px;
   }
 }
 
@@ -1241,6 +1243,11 @@ button {
 
   .control-button-wide {
     margin-left: 0;
+  }
+
+  .control-button {
+    height: 50px;
+    min-height: 50px;
   }
 
   .hud {
