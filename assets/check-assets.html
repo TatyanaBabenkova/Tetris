@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'"
+    >
+    <title>Проверка картинок игры Мир за окном</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 24px;
+        background: #f4fbff;
+        color: #17323a;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+      }
+      h1 {
+        margin: 0 0 10px;
+        font-size: 32px;
+      }
+      p {
+        margin: 0 0 18px;
+        color: #446b73;
+        font-weight: 650;
+      }
+      .list {
+        display: grid;
+        gap: 12px;
+      }
+      .asset {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 14px;
+        align-items: center;
+        padding: 12px;
+        border: 1px solid rgba(23, 50, 58, 0.14);
+        border-radius: 8px;
+        background: #fffaf1;
+        box-shadow: 0 8px 20px rgba(13, 31, 38, 0.08);
+      }
+      .asset img {
+        width: 120px;
+        aspect-ratio: 16 / 9;
+        object-fit: contain;
+        border-radius: 6px;
+        background: #d9eef4;
+      }
+      .asset strong {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 16px;
+      }
+      .asset code {
+        display: block;
+        overflow-wrap: anywhere;
+        color: #315d66;
+      }
+      .status {
+        margin-top: 6px;
+        font-weight: 900;
+      }
+      .ok { color: #16855f; }
+      .bad { color: #d73b45; }
+      @media (max-width: 560px) {
+        body { padding: 14px; }
+        .asset { grid-template-columns: 1fr; }
+        .asset img { width: 100%; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Проверка картинок</h1>
+      <p>Если здесь есть строки со статусом “не найдено”, значит на GitHub не попал файл или нарушена структура папок.</p>
+      <div id="assetList" class="list"></div>
+    </main>
+
+    <script>
+      const assets = [
+        ["Главная заставка", "assets/title-splash.png"],
+        ["Уровень 1: Летний луг", "assets/level-01-summer-meadow.png"],
+        ["Уровень 2: Березовый лес", "assets/level-02-birch-forest.png"],
+        ["Уровень 3: Деревня у реки", "assets/level-03-riverside-village.png"],
+        ["Уровень 4: Большой город", "assets/level-04-big-city.png"],
+        ["Уровень 5: Море", "assets/level-05-seaside.png"],
+        ["Уровень 6: Горы", "assets/level-06-mountains.png"],
+        ["Уровень 7: Снежный лес", "assets/level-07-snowy-forest.png"],
+        ["Уровень 8: Ночной город", "assets/level-08-night-city.png"],
+        ["Уровень 9: Северное сияние", "assets/level-09-aurora.png"],
+        ["Уровень 10: Космос", "assets/level-10-space.png"],
+        ["Луг: ромашка", "assets/meadow-daisy.png"],
+        ["Луг: земляника", "assets/meadow-strawberry.png"],
+        ["Луг: лист", "assets/meadow-leaf.png"],
+        ["Лес: мухомор", "assets/forest-amanita.png"],
+        ["Лес: белый гриб", "assets/forest-boletus.png"],
+        ["Лес: шишка", "assets/forest-pinecone.png"],
+        ["Деревня: яблоко", "assets/village-apple.png"],
+        ["Деревня: подсолнух", "assets/village-sunflower.png"],
+        ["Деревня: кувшинка", "assets/village-lily-pad.png"],
+        ["Город: стекло", "assets/city-window.png"],
+        ["Город: бетон", "assets/city-concrete.png"],
+        ["Город: светофор", "assets/city-traffic-light.png"],
+        ["Море: волна", "assets/sea-wave.png"],
+        ["Море: спасательный круг", "assets/sea-lifebuoy.png"],
+        ["Море: якорь", "assets/sea-anchor.png"],
+        ["Горы: кристалл", "assets/mountain-crystal.png"],
+        ["Горы: вершина", "assets/mountain-peak.png"],
+        ["Горы: компас", "assets/mountain-compass.png"],
+        ["Снежный лес: снежинка", "assets/snow-snowflake.png"],
+        ["Снежный лес: рябина", "assets/snow-rowan.png"],
+        ["Снежный лес: еловая лапка", "assets/snow-fir.png"],
+        ["Ночной город: молния", "assets/night-lightning.png"],
+        ["Ночной город: окно", "assets/night-window.png"],
+        ["Ночной город: неоновая звезда", "assets/night-neon-star.png"],
+        ["Северное сияние: сфера", "assets/aurora-orb.png"],
+        ["Северное сияние: кристалл", "assets/aurora-crystal.png"],
+        ["Северное сияние: капли света", "assets/aurora-droplets.png"],
+        ["Космос: планета", "assets/space-planet.png"],
+        ["Космос: звезда", "assets/space-star.png"],
+        ["Космос: комета", "assets/space-comet.png"]
+      ];
+
+      const list = document.getElementById("assetList");
+
+      for (const [title, src] of assets) {
+        const item = document.createElement("section");
+        item.className = "asset";
+
+        const img = document.createElement("img");
+        img.alt = title;
+
+        const body = document.createElement("div");
+        const name = document.createElement("strong");
+        name.textContent = title;
+        const path = document.createElement("code");
+        path.textContent = src;
+        const status = document.createElement("div");
+        status.className = "status";
+        status.textContent = "проверяю...";
+
+        img.addEventListener("load", () => {
+          status.textContent = "OK";
+          status.className = "status ok";
+        });
+        img.addEventListener("error", () => {
+          status.textContent = "не найдено";
+          status.className = "status bad";
+        });
+        img.src = src;
+
+        body.append(name, path, status);
+        item.append(img, body);
+        list.append(item);
+      }
+    </script>
+  </body>
+</html>
