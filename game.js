@@ -2035,20 +2035,33 @@ function drawPicturePanorama(station, w, h, t) {
   sceneCtx.imageSmoothingEnabled = true;
   sceneCtx.imageSmoothingQuality = "high";
 
-  drawMovingPanorama(image, w, h, 46 + levelIndex * 5, t);
+  drawMovingPanorama(image, w, h, 46 + levelIndex * 5, t, true);
   drawStationPictureOverlay(station, w, h);
   drawWindowMotionStreaks(w, h, t);
 }
 
-function drawMovingPanorama(image, w, h, speed, t) {
+function drawMovingPanorama(image, w, h, speed, t, seamless = false) {
   const scale = Math.max((w * 1.18) / image.width, h / image.height);
   const drawWidth = image.width * scale;
   const drawHeight = image.height * scale;
   const y = (h - drawHeight) / 2;
-  const offset = -((t * speed) % drawWidth);
-  let tileIndex = 0;
 
   sceneCtx.save();
+  if (seamless) {
+    const pairWidth = drawWidth * 2;
+    const offset = -((t * speed) % pairWidth);
+
+    for (let x = offset - pairWidth; x < w + pairWidth; x += pairWidth) {
+      drawPanoramaTile(image, x, y, drawWidth, drawHeight, false);
+      drawPanoramaTile(image, x + drawWidth, y, drawWidth, drawHeight, true);
+    }
+
+    sceneCtx.restore();
+    return;
+  }
+
+  const offset = -((t * speed) % drawWidth);
+  let tileIndex = 0;
   for (let x = offset - drawWidth; x < w + drawWidth; x += drawWidth) {
     drawPanoramaTile(image, x, y, drawWidth, drawHeight, tileIndex % 2 === 1);
     tileIndex += 1;
@@ -2611,6 +2624,8 @@ function bindControls() {
       x: event.clientX,
       y: event.clientY,
       lastX: event.clientX,
+      axis: null,
+      startedAt: event.timeStamp,
       moved: false
     };
     if (gameCanvas.setPointerCapture && !gameCanvas.hasPointerCapture?.(event.pointerId)) {
@@ -2621,40 +2636,102 @@ function bindControls() {
   gameCanvas.addEventListener("pointermove", (event) => {
     if (!touchStart) return;
     event.preventDefault();
-    const cellStep = Math.max(18, boardMetrics.cell * 0.62);
-    touchMoveDebt += event.clientX - touchStart.lastX;
-    touchStart.lastX = event.clientX;
+    const totalX = event.clientX - touchStart.x;
+    const totalY = event.clientY - touchStart.y;
+    const absX = Math.abs(totalX);
+    const absY = Math.abs(totalY);
+    const lockThreshold = Math.max(8, boardMetrics.cell * 0.24);
 
-    while (touchMoveDebt >= cellStep) {
-      movePlayer(1);
-      touchMoveDebt -= cellStep;
-      touchStart.moved = true;
+    if (!touchStart.axis) {
+      if (Math.max(absX, absY) < lockThreshold) return;
+
+      if ((totalY > 0 && absY >= absX * 0.82) || absY >= absX * 1.12) {
+        touchStart.axis = "vertical";
+        touchMoveDebt = 0;
+        touchDropMark = touchStart.y;
+      } else if (absX >= absY * 1.12) {
+        touchStart.axis = "horizontal";
+        touchMoveDebt = totalX;
+        touchStart.lastX = event.clientX;
+      } else if (Math.max(absX, absY) >= lockThreshold * 2) {
+        touchStart.axis = absY > absX ? "vertical" : "horizontal";
+        touchMoveDebt = touchStart.axis === "horizontal" ? totalX : 0;
+        touchDropMark = touchStart.y;
+        touchStart.lastX = event.clientX;
+      } else {
+        return;
+      }
+    } else if (touchStart.axis === "horizontal") {
+      touchMoveDebt += event.clientX - touchStart.lastX;
+      touchStart.lastX = event.clientX;
     }
 
-    while (touchMoveDebt <= -cellStep) {
-      movePlayer(-1);
-      touchMoveDebt += cellStep;
-      touchStart.moved = true;
+    if (touchStart.axis === "horizontal") {
+      const cellStep = Math.max(16, boardMetrics.cell * 0.56);
+      while (touchMoveDebt >= cellStep) {
+        movePlayer(1);
+        touchMoveDebt -= cellStep;
+        touchStart.moved = true;
+      }
+
+      while (touchMoveDebt <= -cellStep) {
+        movePlayer(-1);
+        touchMoveDebt += cellStep;
+        touchStart.moved = true;
+      }
+      return;
     }
 
-    const dropStep = Math.max(22, boardMetrics.cell * 0.82);
-    if (event.clientY - touchDropMark >= dropStep) {
+    const dropStep = Math.max(13, boardMetrics.cell * 0.48);
+    while (event.clientY - touchDropMark >= dropStep) {
       softDrop();
-      touchDropMark = event.clientY;
+      touchDropMark += dropStep;
       touchStart.moved = true;
     }
   });
 
   gameCanvas.addEventListener("pointerup", (event) => {
     if (!touchStart) return;
+    const gesture = touchStart;
     const dx = event.clientX - touchStart.x;
     const dy = event.clientY - touchStart.y;
     const wasDrag = touchStart.moved;
+    const elapsed = Math.max(1, event.timeStamp - touchStart.startedAt);
+    const lockThreshold = Math.max(8, boardMetrics.cell * 0.24);
+    const absX = Math.abs(dx);
+    const absY = Math.abs(dy);
+    let gestureAxis = gesture.axis;
+    if (!gestureAxis && Math.max(absX, absY) >= lockThreshold) {
+      if ((dy > 0 && absY >= absX * 0.82) || absY >= absX * 1.12) {
+        gestureAxis = "vertical";
+      } else if (absX >= absY * 1.12) {
+        gestureAxis = "horizontal";
+      }
+    }
     touchStart = null;
     touchMoveDebt = 0;
 
     if (gameCanvas.releasePointerCapture && gameCanvas.hasPointerCapture?.(event.pointerId)) {
       gameCanvas.releasePointerCapture(event.pointerId);
+    }
+
+    if (gestureAxis === "vertical") {
+      const flickDistance = Math.max(48, boardMetrics.cell * 1.5);
+      if (dy >= flickDistance && elapsed <= 750) {
+        hardDrop();
+      } else if (!wasDrag && dy >= lockThreshold) {
+        softDrop();
+      } else if (dy <= -lockThreshold) {
+        rotatePlayer();
+      }
+      return;
+    }
+
+    if (gestureAxis === "horizontal") {
+      if (!wasDrag && Math.abs(dx) >= lockThreshold) {
+        movePlayer(dx > 0 ? 1 : -1);
+      }
+      return;
     }
 
     if (wasDrag) {
