@@ -370,6 +370,7 @@ const coverScreen = document.getElementById("coverScreen");
 const startScreen = document.getElementById("startScreen");
 const pauseScreen = document.getElementById("pauseScreen");
 const gameOverScreen = document.getElementById("gameOverScreen");
+const rotateScreen = document.getElementById("rotateScreen");
 const finalScore = document.getElementById("finalScore");
 const finalRecord = document.getElementById("finalRecord");
 const toast = document.getElementById("toast");
@@ -414,6 +415,10 @@ let lastPreviewKey = "";
 let animationFrameId = 0;
 let renderErrorShown = false;
 let newRecordThisGame = false;
+let orientationGuardActive = false;
+let resumeAfterRotation = false;
+const shortLandscapeMedia = window.matchMedia("(orientation: landscape) and (max-height: 620px)");
+const coarsePointerMedia = window.matchMedia("(pointer: coarse)");
 const sceneImages = {
   levels: STATIONS.map((station) => loadSceneImage(station.image))
 };
@@ -732,6 +737,43 @@ function isModalVisible(modal) {
   return Boolean(modal && modal.classList.contains("is-visible"));
 }
 
+function isPhoneLandscape() {
+  const hasTouch = coarsePointerMedia.matches || navigator.maxTouchPoints > 0 || "ontouchstart" in window;
+  return hasTouch && shortLandscapeMedia.matches;
+}
+
+function resetTouchInteraction() {
+  clearHoldTimers();
+  touchStart = null;
+  touchMoveDebt = 0;
+  touchDropMark = 0;
+}
+
+function syncOrientationGuard() {
+  const shouldBlock = isPhoneLandscape();
+
+  if (shouldBlock && !orientationGuardActive) {
+    orientationGuardActive = true;
+    resumeAfterRotation = running && !paused && !gameOver;
+    if (resumeAfterRotation) paused = true;
+    resetTouchInteraction();
+    rotateScreen.setAttribute("aria-hidden", "false");
+    showModal(rotateScreen);
+    return;
+  }
+
+  if (!shouldBlock && orientationGuardActive) {
+    orientationGuardActive = false;
+    hideModal(rotateScreen);
+    rotateScreen.setAttribute("aria-hidden", "true");
+    if (resumeAfterRotation && running && !gameOver) {
+      paused = false;
+      lastTime = performance.now();
+    }
+    resumeAfterRotation = false;
+  }
+}
+
 function getDropInterval() {
   const base = 820 - levelIndex * 84 - Math.floor(lines / 24) * 18;
   return Math.max(95, base);
@@ -935,7 +977,7 @@ function endGame() {
 }
 
 function togglePause(force) {
-  if (!running || gameOver) return;
+  if (!running || gameOver || orientationGuardActive) return;
   paused = typeof force === "boolean" ? force : !paused;
   if (paused) {
     showModal(pauseScreen);
@@ -2776,6 +2818,10 @@ function bindControls() {
   window.addEventListener("blur", clearHoldTimers);
 
   window.addEventListener("keydown", (event) => {
+    if (orientationGuardActive) {
+      event.preventDefault();
+      return;
+    }
     if (["ArrowLeft", "ArrowRight", "ArrowDown", "ArrowUp", " ", "Enter"].includes(event.key)) {
       event.preventDefault();
     }
@@ -2798,13 +2844,18 @@ function bindControls() {
   window.addEventListener("resize", () => {
     resizeAll();
     drawNext();
+    syncOrientationGuard();
   });
   if (window.visualViewport) {
     window.visualViewport.addEventListener("resize", () => {
       resizeAll();
       drawNext();
+      syncOrientationGuard();
     });
   }
+  shortLandscapeMedia.addEventListener?.("change", syncOrientationGuard);
+  coarsePointerMedia.addEventListener?.("change", syncOrientationGuard);
+  window.addEventListener("orientationchange", syncOrientationGuard);
 }
 
 function clearHoldTimers() {
@@ -2829,6 +2880,7 @@ function init() {
   resizeAll();
   drawNext();
   bindControls();
+  syncOrientationGuard();
   safeDrawFrame(performance.now());
   startAnimationLoop();
 }
