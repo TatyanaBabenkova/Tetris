@@ -4,6 +4,7 @@ const COLS = 10;
 const ROWS = 21;
 const LINES_PER_STATION = 8;
 const LOCK_DELAY_MS = 420;
+const MASTER_AUDIO_GAIN = 0.42;
 const SPRITE_SIZE_BOOST = 1;
 const SPRITE_ASSET_VERSION = "20260814-art3";
 const STORAGE_KEYS = {
@@ -2516,7 +2517,7 @@ function ensureAudio() {
     }
     audioCtx = new AudioConstructor();
     masterGain = audioCtx.createGain();
-    masterGain.gain.value = 0.18;
+    masterGain.gain.value = MASTER_AUDIO_GAIN;
     masterGain.connect(audioCtx.destination);
   }
   return true;
@@ -2545,12 +2546,12 @@ function playEffect(name) {
   if (!audioCtx || !masterGain) return;
 
   const effects = {
-    rotate: [500, 0.045, "triangle", 0.014],
-    land: [170, 0.055, "sine", 0.018],
-    drop: [145, 0.075, "sawtooth", 0.022],
-    clear: [660, 0.11, "triangle", 0.04],
-    level: [820, 0.16, "triangle", 0.045],
-    gameover: [120, 0.2, "sine", 0.034]
+    rotate: [540, 0.055, "triangle", 0.04],
+    land: [240, 0.08, "triangle", 0.052],
+    drop: [190, 0.11, "sawtooth", 0.06],
+    clear: [660, 0.14, "triangle", 0.085],
+    level: [820, 0.18, "triangle", 0.09],
+    gameover: [165, 0.24, "triangle", 0.065]
   };
   const effect = effects[name];
   if (!effect) return;
