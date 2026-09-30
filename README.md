@@ -15,7 +15,7 @@
 - `game.js` - игровая логика, уровни, графика, звук и локальный рекорд.
 - `check-assets.html` - проверка, что GitHub Pages видит все картинки.
 - `GITHUB_UPLOAD.md` - короткая инструкция по структуре файлов для GitHub.
-- `assets/title-splash.png` - главная картинка первой заставки.
+- `assets/title-splash.webp` - оптимизированная главная картинка первой заставки.
 - `assets/level-01-summer-meadow.png` ... `assets/level-10-space.png` - рисованные панорамные фоны уровней.
 - PNG-файлы с префиксами `meadow-`, `forest-`, `village-`, `city-`, `sea-`, `mountain-`, `snow-`, `night-`, `aurora-`, `space-` в папке `assets` - по три предмета для каждого из десяти уровней.
 
