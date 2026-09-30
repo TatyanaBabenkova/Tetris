@@ -3,6 +3,7 @@
 const COLS = 10;
 const ROWS = 21;
 const LINES_PER_STATION = 8;
+const LOCK_DELAY_MS = 420;
 const SPRITE_SIZE_BOOST = 1;
 const SPRITE_ASSET_VERSION = "20260814-art3";
 const STORAGE_KEYS = {
@@ -409,8 +410,8 @@ let masterGain = null;
 let softDropTimer = 0;
 let horizontalTimer = 0;
 let touchStart = null;
-let touchMoveDebt = 0;
 let touchDropMark = 0;
+let lockCounter = 0;
 let lastPreviewKey = "";
 let animationFrameId = 0;
 let renderErrorShown = false;
@@ -681,6 +682,8 @@ function newGame() {
   lines = 0;
   levelIndex = 0;
   dropCounter = 0;
+  lockCounter = 0;
+  resetTouchInteraction();
   sceneClock = 0;
   dropInterval = getDropInterval();
   player = makePiece(nextType());
@@ -745,7 +748,6 @@ function isPhoneLandscape() {
 function resetTouchInteraction() {
   clearHoldTimers();
   touchStart = null;
-  touchMoveDebt = 0;
   touchDropMark = 0;
 }
 
@@ -793,10 +795,13 @@ function collides(piece, offsetX = 0, offsetY = 0, matrix = piece.matrix) {
 }
 
 function movePlayer(direction) {
-  if (!canControl()) return;
+  if (!canControl()) return false;
   if (!collides(player, direction, 0)) {
     player.x += direction;
+    lockCounter = 0;
+    return true;
   }
+  return false;
 }
 
 function softDrop() {
@@ -811,13 +816,12 @@ function stepDown(isManual) {
   if (!canControl()) return;
   if (!collides(player, 0, 1)) {
     player.y += 1;
+    lockCounter = 0;
     if (isManual) {
       score += 1;
     }
     dropCounter = 0;
     updateHud();
-  } else {
-    lockPiece();
   }
 }
 
@@ -841,6 +845,7 @@ function rotatePlayer() {
     if (!collides(player, kick, 0, rotated)) {
       player.matrix = rotated;
       player.x += kick;
+      lockCounter = 0;
       playEffect("rotate");
       return;
     }
@@ -864,6 +869,8 @@ function canControl() {
 
 function lockPiece() {
   if (!player) return;
+  resetTouchInteraction();
+  lockCounter = 0;
   for (let y = 0; y < player.matrix.length; y += 1) {
     for (let x = 0; x < player.matrix[y].length; x += 1) {
       if (!player.matrix[y][x]) continue;
@@ -952,6 +959,8 @@ function spawnPiece() {
   player = nextPiece;
   player.x = Math.floor(COLS / 2) - Math.ceil(player.matrix[0].length / 2);
   player.y = player.type === "I" ? -1 : 0;
+  dropCounter = 0;
+  lockCounter = 0;
   nextPiece = makePiece(nextType());
   lastPreviewKey = "";
   drawNext();
@@ -1003,6 +1012,15 @@ function drawFrame(time = 0) {
     if (dropCounter > dropInterval) {
       gravityDrop();
       dropCounter = 0;
+    }
+
+    if (player && collides(player, 0, 1)) {
+      lockCounter += Math.min(delta, 50);
+      if (lockCounter >= LOCK_DELAY_MS) {
+        lockPiece();
+      }
+    } else {
+      lockCounter = 0;
     }
   }
 
@@ -2660,13 +2678,13 @@ function bindControls() {
   gameCanvas.addEventListener("pointerdown", (event) => {
     event.preventDefault();
     resumeAudio();
-    touchMoveDebt = 0;
     touchDropMark = event.clientY;
     touchStart = {
       x: event.clientX,
       y: event.clientY,
-      lastX: event.clientX,
       axis: null,
+      horizontalDirection: 0,
+      horizontalSteps: 0,
       startedAt: event.timeStamp,
       moved: false
     };
@@ -2689,37 +2707,31 @@ function bindControls() {
 
       if ((totalY > 0 && absY >= absX * 0.82) || absY >= absX * 1.12) {
         touchStart.axis = "vertical";
-        touchMoveDebt = 0;
         touchDropMark = touchStart.y;
       } else if (absX >= absY * 1.12) {
         touchStart.axis = "horizontal";
-        touchMoveDebt = totalX;
-        touchStart.lastX = event.clientX;
+        touchStart.horizontalDirection = totalX > 0 ? 1 : -1;
       } else if (Math.max(absX, absY) >= lockThreshold * 2) {
         touchStart.axis = absY > absX ? "vertical" : "horizontal";
-        touchMoveDebt = touchStart.axis === "horizontal" ? totalX : 0;
+        if (touchStart.axis === "horizontal") {
+          touchStart.horizontalDirection = totalX > 0 ? 1 : -1;
+        }
         touchDropMark = touchStart.y;
-        touchStart.lastX = event.clientX;
       } else {
         return;
       }
-    } else if (touchStart.axis === "horizontal") {
-      touchMoveDebt += event.clientX - touchStart.lastX;
-      touchStart.lastX = event.clientX;
     }
 
     if (touchStart.axis === "horizontal") {
       const cellStep = Math.max(16, boardMetrics.cell * 0.56);
-      while (touchMoveDebt >= cellStep) {
-        movePlayer(1);
-        touchMoveDebt -= cellStep;
-        touchStart.moved = true;
-      }
+      const directedDistance = totalX * touchStart.horizontalDirection;
+      const requestedSteps = Math.max(0, Math.floor(directedDistance / cellStep));
 
-      while (touchMoveDebt <= -cellStep) {
-        movePlayer(-1);
-        touchMoveDebt += cellStep;
-        touchStart.moved = true;
+      while (touchStart.horizontalSteps < requestedSteps) {
+        touchStart.horizontalSteps += 1;
+        if (movePlayer(touchStart.horizontalDirection)) {
+          touchStart.moved = true;
+        }
       }
       return;
     }
@@ -2751,7 +2763,6 @@ function bindControls() {
       }
     }
     touchStart = null;
-    touchMoveDebt = 0;
 
     if (gameCanvas.releasePointerCapture && gameCanvas.hasPointerCapture?.(event.pointerId)) {
       gameCanvas.releasePointerCapture(event.pointerId);
@@ -2796,7 +2807,6 @@ function bindControls() {
 
   gameCanvas.addEventListener("pointercancel", () => {
     touchStart = null;
-    touchMoveDebt = 0;
   });
 
   document.addEventListener("click", (event) => {
@@ -2886,3 +2896,4 @@ function init() {
 }
 
 init();
+
