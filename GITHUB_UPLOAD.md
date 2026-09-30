@@ -8,7 +8,7 @@ styles.css
 game.js
 check-assets.html
 assets/
-  title-splash.png
+  title-splash.webp
   level-01-summer-meadow.png
   level-02-birch-forest.png
   level-03-riverside-village.png
